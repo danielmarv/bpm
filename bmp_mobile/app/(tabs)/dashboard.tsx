@@ -6,9 +6,9 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "../../contexts/AuthContext"
 import { BPQuickEntry } from "../../components/bp/BPQuickEntry"
 import { BPStatsCard } from "../../components/bp/BPStatsCard"
-import { RecentReadings } from "../../components/bp/RecentReadings"
+// import { RecentReadings } from "../../components/bp/RecentReadings"
 import { HealthOverview } from "../../components/dashboard/HealthOverview"
-import { QuickActions } from "../../components/dashboard/QuickActions"
+// import { QuickActions } from "../../components/dashboard/QuickActions"
 import { Heart } from "../../components/ui/Icons"
 
 const { width } = Dimensions.get("window")
@@ -74,16 +74,16 @@ export default function DashboardScreen() {
         </View>
 
         {/* Recent Readings */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Readings</Text>
           <RecentReadings />
-        </View>
+        </View> */}
 
         {/* Quick Actions */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <QuickActions />
-        </View>
+        </View> */}
 
         <View style={styles.bottomPadding} />
       </ScrollView>

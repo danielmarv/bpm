@@ -6,9 +6,9 @@ import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "../../contexts/AuthContext"
 import { LifestyleOverview } from "../../components/lifestyle/LifestyleOverview"
 import { ExerciseTracker } from "../../components/lifestyle/ExerciseTracker"
-import { DietTracker } from "../../components/lifestyle/DietTracker"
-import { WeightTracker } from "../../components/lifestyle/WeightTracker"
-import { ProfileSettings } from "../../components/profile/ProfileSettings"
+// import { DietTracker } from "../../components/lifestyle/DietTracker"
+// import { WeightTracker } from "../../components/lifestyle/WeightTracker"
+// import { ProfileSettings } from "../../components/profile/ProfileSettings"
 import { Activity, Apple, Scale, Settings } from "../../components/ui/Icons"
 
 type ViewMode = "overview" | "exercise" | "diet" | "weight" | "settings"
@@ -21,12 +21,12 @@ export default function ProfileScreen() {
     switch (viewMode) {
       case "exercise":
         return <ExerciseTracker onBack={() => setViewMode("overview")} />
-      case "diet":
-        return <DietTracker onBack={() => setViewMode("overview")} />
-      case "weight":
-        return <WeightTracker onBack={() => setViewMode("overview")} />
-      case "settings":
-        return <ProfileSettings onBack={() => setViewMode("overview")} />
+      // case "diet":
+      //   return <DietTracker onBack={() => setViewMode("overview")} />
+      // case "weight":
+      //   return <WeightTracker onBack={() => setViewMode("overview")} />
+      // case "settings":
+      //   return <ProfileSettings onBack={() => setViewMode("overview")} />
       default:
         return (
           <LifestyleOverview

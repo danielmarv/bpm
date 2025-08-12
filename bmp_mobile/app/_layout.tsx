@@ -12,12 +12,9 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    "Montserrat-Regular": require("../assets/fonts/Montserrat-Regular.ttf"),
-    "Montserrat-Bold": require("../assets/fonts/Montserrat-Bold.ttf"),
-    "Montserrat-SemiBold": require("../assets/fonts/Montserrat-SemiBold.ttf"),
-    "OpenSans-Regular": require("../assets/fonts/OpenSans-Regular.ttf"),
-    "OpenSans-SemiBold": require("../assets/fonts/OpenSans-SemiBold.ttf"),
+    "System-Regular": require("react-native").Platform.OS === "ios" ? undefined : undefined,
   })
+
 
   useEffect(() => {
     if (fontsLoaded) {

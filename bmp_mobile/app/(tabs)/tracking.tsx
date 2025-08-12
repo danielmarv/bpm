@@ -3,8 +3,8 @@
 import { useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
-import { BPEntryForm } from "../../components/bp/BPEntryForm"
-import { BPHistory } from "../../components/bp/BPHistory"
+// import { BPEntryForm } from "../../components/bp/BPEntryForm"
+// import { BPHistory } from "../../components/bp/BPHistory"
 import { BPChart } from "../../components/bp/BPChart"
 import { Plus, BarChart3, List } from "../../components/ui/Icons"
 
@@ -15,14 +15,10 @@ export default function TrackingScreen() {
 
   const renderContent = () => {
     switch (viewMode) {
-      case "entry":
-        return <BPEntryForm onEntryComplete={() => setViewMode("history")} />
-      case "history":
-        return <BPHistory />
       case "chart":
         return <BPChart />
       default:
-        return <BPEntryForm onEntryComplete={() => setViewMode("history")} />
+        return <BPChart />
     }
   }
 

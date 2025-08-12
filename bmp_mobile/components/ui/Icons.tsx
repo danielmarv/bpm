@@ -1,4 +1,4 @@
-import { Svg, Path, Circle } from "react-native-svg"
+import { Svg, Path, Circle, Rect, Line } from "react-native-svg"
 
 interface IconProps {
   size?: number
@@ -301,6 +301,183 @@ export function MessageSquare({ size = 24, color = "#000000" }: IconProps) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
         d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function ArrowLeft({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M19 12H5M12 19l-7-7 7-7"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function AlertCircle({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+      <Path d="M12 8v4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12 16h.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  )
+}
+
+export function Mail({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M22 6l-10 7L2 6"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function Lock({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect
+        x="3"
+        y="11"
+        width="18"
+        height="11"
+        rx="2"
+        ry="2"
+        stroke={color}
+        strokeWidth="2"
+      />
+      <Path
+        d="M7 11V7a5 5 0 0 1 10 0v4"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function Apple({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M16 13c-1.33-1.6-1.1-4.67.6-6A3.7 3.7 0 0 0 14 5a3.7 3.7 0 0 0-3.6 2c-1.7 1.33-1.93 4.4-.6 6M12 22c-4 0-7-4-7-9 0-3 2.4-5.5 5-5.5 1 0 2 .5 3 1.5 1-1 2-1.5 3-1.5 2.6 0 5 2.5 5 5.5 0 5-3 9-7 9Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M14 2c0 1-1 2-2 2s-2-1-2-2 1-2 2-2 2 1 2 2Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function Scale({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3v18" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path d="M3 7h18" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Path
+        d="M6 7l-3 7a6 6 0 0 0 12 0l-3-7"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M18 7l-3 7a6 6 0 0 0 12 0l-3-7"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        transform="translate(-6,0)"
+      />
+    </Svg>
+  )
+}
+
+export function Settings({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth="2" />
+      <Path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09c.7 0 1.31-.4 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06c.51.51 1.25.66 1.82.33.57-.33 1-.94 1-1.64V3a2 2 0 0 1 4 0v.09c0 .7.43 1.31 1 1.64.57.33 1.31.18 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.4.51-.53 1.12-.33 1.82.2.7.8 1.2 1.51 1.2H21a2 2 0 0 1 0 4h-.09c-.71 0-1.31.5-1.51 1.2Z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function List({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Line x1="8" y1="6" x2="21" y2="6" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="8" y1="12" x2="21" y2="12" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Line x1="8" y1="18" x2="21" y2="18" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <Circle cx="3" cy="6" r="1" fill={color} />
+      <Circle cx="3" cy="12" r="1" fill={color} />
+      <Circle cx="3" cy="18" r="1" fill={color} />
+    </Svg>
+  )
+}
+
+export function Inbox({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M22 12h-6l-2 4h-4l-2-4H2"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M5 3h14a2 2 0 0 1 2 2v7l-4 8H7l-4-8V5a2 2 0 0 1 2-2z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  )
+}
+
+export function Phone({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.37 1.77.72 2.58a2 2 0 0 1-.45 2.11l-1.27 1.27a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.81.35 1.68.6 2.58.72a2 2 0 0 1 1.72 2z"
         stroke={color}
         strokeWidth="2"
         strokeLinecap="round"

@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-nati
 import { LinearGradient } from "expo-linear-gradient"
 import { MessageList } from "../../components/messages/MessageList"
 import { ComposeMessage } from "../../components/messages/ComposeMessage"
-import { MessageThread } from "../../components/messages/MessageThread"
+// import { MessageThread } from "../../components/messages/MessageThread"
 import { Inbox, Send, Users } from "../../components/ui/Icons"
 
 type ViewMode = "inbox" | "compose" | "thread"
@@ -28,8 +28,8 @@ export default function MessagesScreen() {
     switch (viewMode) {
       case "compose":
         return <ComposeMessage onMessageSent={handleBackToInbox} onCancel={handleBackToInbox} />
-      case "thread":
-        return <MessageThread threadId={selectedThreadId} onBack={handleBackToInbox} onReply={handleBackToInbox} />
+      // case "thread":
+      //   return <MessageThread threadId={selectedThreadId} onBack={handleBackToInbox} onReply={handleBackToInbox} />
       default:
         return <MessageList onOpenThread={handleOpenThread} onCompose={() => setViewMode("compose")} />
     }
