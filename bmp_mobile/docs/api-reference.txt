@@ -1,3 +1,0 @@
-# API Endpoints Reference
-
-## Base URL
