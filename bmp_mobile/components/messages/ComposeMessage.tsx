@@ -4,8 +4,8 @@ import { useState } from "react"
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native"
 import { PrimaryButton, SecondaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
-import { PrioritySelector } from "./PrioritySelector"
-import { ProviderSelector } from "./ProviderSelector"
+// import { PrioritySelector } from "./PrioritySelector"
+// import { ProviderSelector } from "./ProviderSelector"
 
 interface ComposeMessageProps {
   onMessageSent: () => void
@@ -54,21 +54,21 @@ export function ComposeMessage({ onMessageSent, onCancel }: ComposeMessageProps)
       <View style={styles.form}>
         <Text style={styles.title}>New Message</Text>
 
-        <View style={styles.inputContainer}>
+        {/* <View style={styles.inputContainer}>
           <Text style={styles.label}>To *</Text>
           <ProviderSelector
             selectedProviderId={formData.providerId}
             onProviderChange={(providerId) => updateFormData("providerId", providerId)}
           />
-        </View>
+        </View> */}
 
-        <View style={styles.inputContainer}>
+        {/* <View style={styles.inputContainer}>
           <Text style={styles.label}>Priority</Text>
           <PrioritySelector
             selectedPriority={formData.priority}
             onPriorityChange={(priority) => updateFormData("priority", priority)}
           />
-        </View>
+        </View> */}
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Subject *</Text>
