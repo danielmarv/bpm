@@ -43,12 +43,12 @@ function BPDataPoints({ readings }: { readings: BPReading[] }) {
     })
   }, [readings])
 
-  const systolicLine = useMemo(() => {
-    return points.map((point) => [point.x, point.systolicY, 0])
+  const systolicLine = useMemo<readonly [number, number, number][]>(() => {
+    return points.map((point) => [point.x, point.systolicY, 0] as const)
   }, [points])
 
-  const diastolicLine = useMemo(() => {
-    return points.map((point) => [point.x, point.diastolicY, -0.5])
+  const diastolicLine = useMemo<readonly [number, number, number][]>(() => {
+    return points.map((point) => [point.x, point.diastolicY, -0.5] as const)
   }, [points])
 
   return (

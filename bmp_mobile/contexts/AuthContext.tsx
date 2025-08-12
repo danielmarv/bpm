@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import * as SecureStore from "expo-secure-store"
+import Constants from "expo-constants"
 
 interface User {
   id: string
@@ -39,6 +40,8 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const API_URL = Constants.expoConfig?.extra?.apiUrl || "https://api.bpmanager.com"
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
 
       // Mock API call - replace with actual API
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
 
       // Mock API call - replace with actual API
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
