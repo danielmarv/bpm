@@ -7,7 +7,7 @@ import { useRouter } from "expo-router"
 import { useAuth } from "../contexts/AuthContext"
 import { LoadingSpinner } from "../components/ui/LoadingSpinner"
 import { PrimaryButton, SecondaryButton } from "../components/ui/Button"
-import { Heart, Activity, Shield, Users } from "../components/ui/Icons"
+import { Heart, Activity, Shield, User } from "../components/ui/Icons"
 
 const { width, height } = Dimensions.get("window")
 
@@ -73,7 +73,7 @@ export default function HomePage() {
           <View style={styles.featureRow}>
             <View style={[styles.featureCard, { backgroundColor: "#fef3e2" }]}>
               <View style={[styles.featureIcon, { backgroundColor: "#d97706" }]}>
-                <Users size={24} color="#ffffff" />
+                <User size={24} color="#ffffff" />
               </View>
               <Text style={styles.featureTitle}>Provider Connect</Text>
               <Text style={styles.featureDescription}>Seamless healthcare communication</Text>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    fontFamily: "OpenSans-Regular",
+    fontWeight: "400",
     color: "#475569",
   },
   content: {
@@ -137,14 +137,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 8,
   },
   title: {
     fontSize: 32,
-    fontFamily: "Montserrat-Bold",
+    fontWeight: "700",
     color: "#1e293b",
     textAlign: "center",
     lineHeight: 40,
@@ -155,7 +152,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    fontFamily: "OpenSans-Regular",
+    fontWeight: "400",
     color: "#64748b",
     textAlign: "center",
     lineHeight: 24,
@@ -176,9 +173,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
     elevation: 2,
   },
   featureIcon: {
@@ -191,14 +185,14 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     fontSize: 14,
-    fontFamily: "Montserrat-SemiBold",
+    fontWeight: "600",
     color: "#1e293b",
     textAlign: "center",
     marginBottom: 8,
   },
   featureDescription: {
     fontSize: 12,
-    fontFamily: "OpenSans-Regular",
+    fontWeight: "400",
     color: "#64748b",
     textAlign: "center",
     lineHeight: 16,
