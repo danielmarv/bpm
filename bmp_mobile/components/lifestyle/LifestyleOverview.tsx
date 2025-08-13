@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   scoreTitle: {
     fontSize: 18,
-    fontFamily: "Montserrat-SemiBold",
+    fontWeight: "600",
     color: "#1e293b",
   },
   improvementBadge: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   },
   improvementText: {
     fontSize: 12,
-    fontFamily: "OpenSans-SemiBold",
+    fontWeight: "600",
     color: "#059669",
   },
   scoreContent: {
@@ -195,12 +195,12 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     fontSize: 48,
-    fontFamily: "Montserrat-Bold",
+    fontWeight: "700",
     color: "#059669",
   },
   scoreSubtext: {
     fontSize: 14,
-    fontFamily: "OpenSans-Regular",
+    fontWeight: "400",
     color: "#64748b",
   },
   scoreBar: {
@@ -243,19 +243,19 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
+    fontWeight: "600",
     color: "#1e293b",
     marginBottom: 4,
   },
   categoryValue: {
     fontSize: 20,
-    fontFamily: "Montserrat-Bold",
+    fontWeight: "700",
     color: "#1e293b",
     marginBottom: 4,
   },
   categorySubtext: {
     fontSize: 12,
-    fontFamily: "OpenSans-Regular",
+    fontWeight: "400",
     color: "#64748b",
   },
   categoryProgress: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 12,
-    fontFamily: "Montserrat-SemiBold",
+    fontWeight: "600",
     color: "#1e293b",
   },
   trendIcon: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   quickStatsTitle: {
     fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
+    fontWeight: "600",
     color: "#1e293b",
     marginBottom: 16,
   },
@@ -307,12 +307,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 18,
-    fontFamily: "Montserrat-Bold",
+    fontWeight: "700",
     color: "#1e293b",
   },
   statLabel: {
     fontSize: 12,
-    fontFamily: "OpenSans-Regular",
+    fontWeight: "400",
     color: "#64748b",
   },
 })

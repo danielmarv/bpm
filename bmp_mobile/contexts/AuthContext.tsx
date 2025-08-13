@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { Platform } from "react-native"
 import * as SecureStore from "expo-secure-store"
 import Constants from "expo-constants"
 
@@ -40,7 +41,32 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || "https://api.bpmanager.com"
+const API_URL = "http://localhost:5000/api" // Adjust based on your server setup
+
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === "web") {
+      return localStorage.getItem(key)
+    }
+    return await SecureStore.getItemAsync(key)
+  },
+
+  async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === "web") {
+      localStorage.setItem(key, value)
+    } else {
+      await SecureStore.setItemAsync(key, value)
+    }
+  },
+
+  async removeItem(key: string): Promise<void> {
+    if (Platform.OS === "web") {
+      localStorage.removeItem(key)
+    } else {
+      await SecureStore.deleteItemAsync(key)
+    }
+  },
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -52,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuthState = async () => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken")
-      const userData = await SecureStore.getItemAsync("userData")
+      const token = await storage.getItem("accessToken")
+      const userData = await storage.getItem("userData")
 
       if (token && userData) {
         setUser(JSON.parse(userData))
@@ -82,13 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Login failed")
       }
 
-      const data = await response.json()
+      const responseData = await response.json()
 
-      await SecureStore.setItemAsync("accessToken", data.tokens.accessToken)
-      await SecureStore.setItemAsync("refreshToken", data.tokens.refreshToken)
-      await SecureStore.setItemAsync("userData", JSON.stringify(data.user))
+      await storage.setItem("accessToken", responseData.data.accessToken)
+      await storage.setItem("refreshToken", responseData.data.refreshToken)
+      await storage.setItem("userData", JSON.stringify(responseData.data.user))
 
-      setUser(data.user)
+      setUser(responseData.data.user)
     } catch (error) {
       throw error
     } finally {
@@ -113,13 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Registration failed")
       }
 
-      const data = await response.json()
+      const responseData = await response.json()
 
-      await SecureStore.setItemAsync("accessToken", data.tokens.accessToken)
-      await SecureStore.setItemAsync("refreshToken", data.tokens.refreshToken)
-      await SecureStore.setItemAsync("userData", JSON.stringify(data.user))
+      await storage.setItem("accessToken", responseData.data.accessToken)
+      await storage.setItem("refreshToken", responseData.data.refreshToken)
+      await storage.setItem("userData", JSON.stringify(responseData.data.user))
 
-      setUser(data.user)
+      setUser(responseData.data.user)
     } catch (error) {
       throw error
     } finally {
@@ -129,9 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync("accessToken")
-      await SecureStore.deleteItemAsync("refreshToken")
-      await SecureStore.deleteItemAsync("userData")
+      await storage.removeItem("accessToken")
+      await storage.removeItem("refreshToken")
+      await storage.removeItem("userData")
       setUser(null)
     } catch (error) {
       console.error("Error logging out:", error)

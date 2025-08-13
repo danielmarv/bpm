@@ -486,3 +486,21 @@ export function Phone({ size = 24, color = "#000000" }: IconProps) {
     </Svg>
   )
 }
+
+
+interface IconProps {
+  size?: number;
+  color?: string;
+  style?: any;
+  fill?: string;
+}
+
+export function Target({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+      <Circle cx="12" cy="12" r="6" stroke={color} strokeWidth="2" />
+      <Circle cx="12" cy="12" r="2" stroke={color} strokeWidth="2" />
+    </Svg>
+  );
+}

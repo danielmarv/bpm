@@ -1,8 +1,7 @@
 "use client"
 
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { Health3DSphere } from "../3d/Health3DSphere"
-import { Eye, EyeOff } from "../ui/Icons"
+import { Eye, EyeOff, TrendUp } from "../ui/Icons"
 import { useState } from "react"
 
 interface BPStats {
@@ -16,7 +15,7 @@ interface HealthOverviewProps {
 }
 
 export function HealthOverview({ stats }: HealthOverviewProps) {
-  const [show3D, setShow3D] = useState(true)
+  const [showDetailed, setShowDetailed] = useState(true)
 
   // Mock health data - in real app, this would come from various sources
   const healthData = {
@@ -39,19 +38,111 @@ export function HealthOverview({ stats }: HealthOverviewProps) {
 
   const { category, color } = getBPCategory(stats.latest.systolic, stats.latest.diastolic)
 
+  const CircularProgress = ({ value, size = 80, strokeWidth = 8, color = "#059669" }) => {
+    const radius = (size - strokeWidth) / 2
+    const circumference = radius * 2 * Math.PI
+    const strokeDasharray = circumference
+    const strokeDashoffset = circumference - (value / 100) * circumference
+
+    return (
+      <View style={{ width: size, height: size, position: "relative" }}>
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: strokeWidth,
+            borderColor: "#f1f5f9",
+            position: "absolute",
+          }}
+        />
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: strokeWidth,
+            borderColor: color,
+            borderTopColor: "transparent",
+            borderRightColor: value > 25 ? color : "transparent",
+            borderBottomColor: value > 50 ? color : "transparent",
+            borderLeftColor: value > 75 ? color : "transparent",
+            position: "absolute",
+            transform: [{ rotate: "-90deg" }],
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 18,
+              fontFamily: "Montserrat-Bold",
+              color: "#1e293b",
+            }}
+          >
+            {value}
+          </Text>
+          <Text
+            style={{
+              fontSize: 10,
+              fontFamily: "OpenSans-Regular",
+              color: "#64748b",
+            }}
+          >
+            Score
+          </Text>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Health Overview</Text>
-        <TouchableOpacity style={styles.toggleButton} onPress={() => setShow3D(!show3D)}>
-          {show3D ? <EyeOff size={20} color="#059669" /> : <Eye size={20} color="#059669" />}
-          <Text style={styles.toggleText}>{show3D ? "Hide 3D" : "Show 3D"}</Text>
+        <TouchableOpacity style={styles.toggleButton} onPress={() => setShowDetailed(!showDetailed)}>
+          {showDetailed ? <EyeOff size={20} color="#059669" /> : <Eye size={20} color="#059669" />}
+          <Text style={styles.toggleText}>{showDetailed ? "Simple" : "Detailed"}</Text>
         </TouchableOpacity>
       </View>
 
-      {show3D ? (
-        <View style={styles.visualizationContainer}>
-          <Health3DSphere healthData={healthData} overallScore={overallScore} width={280} height={220} />
+      {showDetailed ? (
+        <View style={styles.detailedView}>
+          <View style={styles.scoreContainer}>
+            <CircularProgress value={overallScore} size={100} color="#059669" />
+            <View style={styles.trendIndicator}>
+              <TrendUp size={16} color="#059669" />
+              <Text style={styles.trendText}>Improving</Text>
+            </View>
+          </View>
+
+          <View style={styles.metricsGrid}>
+            <View style={styles.metricCard}>
+              <CircularProgress value={healthData.exercise} size={60} color="#2563eb" />
+              <Text style={styles.metricLabel}>Exercise</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <CircularProgress value={healthData.diet} size={60} color="#d97706" />
+              <Text style={styles.metricLabel}>Diet</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <CircularProgress value={healthData.weight} size={60} color="#7c3aed" />
+              <Text style={styles.metricLabel}>Weight</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <CircularProgress value={healthData.bloodPressure} size={60} color="#dc2626" />
+              <Text style={styles.metricLabel}>BP</Text>
+            </View>
+          </View>
         </View>
       ) : (
         <View style={styles.statsGrid}>
@@ -130,9 +221,42 @@ const styles = StyleSheet.create({
     fontFamily: "OpenSans-SemiBold",
     color: "#059669",
   },
-  visualizationContainer: {
+  detailedView: {
+    marginBottom: 20,
+  },
+  scoreContainer: {
     alignItems: "center",
     marginBottom: 20,
+  },
+  trendIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+  },
+  trendText: {
+    fontSize: 12,
+    fontFamily: "OpenSans-SemiBold",
+    color: "#059669",
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  metricCard: {
+    alignItems: "center",
+    width: "48%",
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    padding: 12,
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontFamily: "OpenSans-SemiBold",
+    color: "#64748b",
+    marginTop: 8,
   },
   statsGrid: {
     flexDirection: "row",
