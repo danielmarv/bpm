@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { View, Text, StyleSheet, Dimensions } from "react-native"
+import { View, Text, StyleSheet, Dimensions, ScrollView } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { useRouter } from "expo-router"
 import { useAuth } from "../contexts/AuthContext"
@@ -32,7 +32,10 @@ export default function HomePage() {
 
   return (
     <LinearGradient colors={["#f8fafc", "#e2e8f0"]} style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={true}
+      >
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.logoContainer}>
@@ -98,7 +101,7 @@ export default function HomePage() {
           />
           <SecondaryButton title="Sign In" onPress={() => router.push("/auth/login")} style={styles.secondaryButton} />
         </View>
-      </View>
+      </ScrollView>
     </LinearGradient>
   )
 }
@@ -119,7 +122,7 @@ const styles = StyleSheet.create({
     color: "#475569",
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 40,
