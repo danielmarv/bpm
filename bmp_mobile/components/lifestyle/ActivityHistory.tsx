@@ -31,10 +31,11 @@ export function ActivityHistory() {
       else setLoading(true)
 
       const filterType = filter === "all" ? undefined : filter
-      const data = await activitiesApi.getActivities({ type: filterType })
-      setActivities(data)
+      const response = await activitiesApi.getActivities({ type: filterType })
+      setActivities(response.activities || [])
     } catch (error) {
       console.error("Failed to load activities:", error)
+      setActivities([])
     } finally {
       setLoading(false)
       setRefreshing(false)

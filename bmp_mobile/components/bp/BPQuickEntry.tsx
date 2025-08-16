@@ -4,6 +4,7 @@ import { useState } from "react"
 import { View, Text, TextInput, StyleSheet, Alert } from "react-native"
 import { PrimaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
+import { bloodPressureApi } from "../../services/bloodPressureApi"
 
 interface BPQuickEntryProps {
   onEntryComplete: () => void
@@ -32,8 +33,12 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
 
     try {
       setLoading(true)
-      // Mock API call - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await bloodPressureApi.createReading({
+        systolic: systolicNum,
+        diastolic: diastolicNum,
+        pulse: pulseNum,
+        timestamp: new Date().toISOString(),
+      })
 
       setSystolic("")
       setDiastolic("")
@@ -41,6 +46,7 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
       Alert.alert("Success", "Blood pressure reading saved successfully")
       onEntryComplete()
     } catch (error) {
+      console.error("Error saving BP reading:", error)
       Alert.alert("Error", "Failed to save reading. Please try again.")
     } finally {
       setLoading(false)

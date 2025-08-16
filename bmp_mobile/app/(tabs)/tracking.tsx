@@ -4,6 +4,8 @@ import { useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { BPChart } from "../../components/bp/BPChart"
+import { BPQuickEntry } from "../../components/bp/BPQuickEntry"
+import { RecentReadings } from "../../components/bp/RecentReadings"
 import { ExerciseTracker } from "../../components/lifestyle/ExerciseTracker"
 import { ActivityHistory } from "../../components/lifestyle/ActivityHistory"
 import { Plus, BarChart3, List, Activity } from "../../components/ui/Icons"
@@ -16,6 +18,17 @@ export default function TrackingScreen() {
 
   const renderContent = () => {
     switch (viewMode) {
+      case "bp-entry":
+        return (
+          <BPQuickEntry
+            onEntryComplete={() => {
+              // Refresh chart data after entry
+              setViewMode("bp-chart")
+            }}
+          />
+        )
+      case "bp-history":
+        return <RecentReadings />
       case "bp-chart":
         return <BPChart />
       case "activity-entry":

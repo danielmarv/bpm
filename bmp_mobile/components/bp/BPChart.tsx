@@ -2,30 +2,40 @@
 
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, Dimensions } from "react-native"
-
-interface BPReading {
-  systolic: number
-  diastolic: number
-  timestamp: string
-}
+import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
 
 export function BPChart() {
-  const [readings, setReadings] = useState<BPReading[]>([])
+  const [readings, setReadings] = useState<BloodPressureReading[]>([])
+  const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"3d" | "2d">("2d")
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    setReadings([
-      { systolic: 125, diastolic: 82, timestamp: "2024-01-10T08:00:00Z" },
-      { systolic: 128, diastolic: 85, timestamp: "2024-01-11T08:00:00Z" },
-      { systolic: 122, diastolic: 80, timestamp: "2024-01-12T08:00:00Z" },
-      { systolic: 130, diastolic: 88, timestamp: "2024-01-13T08:00:00Z" },
-      { systolic: 126, diastolic: 83, timestamp: "2024-01-14T08:00:00Z" },
-      { systolic: 124, diastolic: 81, timestamp: "2024-01-15T08:00:00Z" },
-    ])
+    loadReadings()
   }, [])
 
+  const loadReadings = async () => {
+    try {
+      setLoading(true)
+      const recentReadings = await bloodPressureApi.getRecentReadings(10)
+      setReadings(recentReadings)
+    } catch (error) {
+      console.error("Error loading BP readings:", error)
+      setReadings([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const renderSimpleChart = () => {
+    if (readings.length === 0) {
+      return (
+        <View style={styles.placeholder}>
+          <Text style={styles.placeholderText}>No readings yet</Text>
+          <Text style={styles.placeholderSubtext}>Add your first blood pressure reading</Text>
+        </View>
+      )
+    }
+
     const maxSystolic = Math.max(...readings.map((r) => r.systolic))
     const minSystolic = Math.min(...readings.map((r) => r.systolic))
     const maxDiastolic = Math.max(...readings.map((r) => r.diastolic))
@@ -43,7 +53,7 @@ export function BPChart() {
               ((reading.diastolic - minDiastolic) / (maxDiastolic - minDiastolic)) * chartHeight * 0.8
 
             return (
-              <View key={index} style={styles.barGroup}>
+              <View key={reading.id || index} style={styles.barGroup}>
                 <View style={[styles.bar, styles.systolicBar, { height: systolicHeight || 20 }]} />
                 <View style={[styles.bar, styles.diastolicBar, { height: diastolicHeight || 20 }]} />
                 <Text style={styles.dateLabel}>{new Date(reading.timestamp).getDate()}</Text>
@@ -57,6 +67,19 @@ export function BPChart() {
           <Text style={styles.summaryValue}>
             {readings[readings.length - 1]?.systolic}/{readings[readings.length - 1]?.diastolic} mmHg
           </Text>
+        </View>
+      </View>
+    )
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Blood Pressure Trends</Text>
+        </View>
+        <View style={styles.placeholder}>
+          <Text style={styles.placeholderText}>Loading readings...</Text>
         </View>
       </View>
     )
