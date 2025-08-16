@@ -19,7 +19,7 @@
     "plugins": ["expo-router", "expo-secure-store", "expo-notifications"],
     "scheme": "bp-manager",
     "extra": {
-      "apiUrl": "http://localhost:5000"
+      "apiUrl": "https://bpm-ctw9.onrender.com/api"
     }
   }
 }

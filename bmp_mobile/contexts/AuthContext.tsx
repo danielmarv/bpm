@@ -41,7 +41,7 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const API_URL = "http://localhost:5000/api" // Adjust based on your server setup
+const API_URL = "https://bpm-ctw9.onrender.com/api" // Adjust based on your server setup
 
 const storage = {
   async getItem(key: string): Promise<string | null> {
