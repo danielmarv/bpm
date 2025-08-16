@@ -1,9 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { BP3DChart } from "../3d/BP3DChart"
-import { BarChart3, TrendingUp } from "../ui/Icons"
+import { View, Text, StyleSheet, Dimensions } from "react-native"
 
 interface BPReading {
   systolic: number
@@ -13,7 +11,7 @@ interface BPReading {
 
 export function BPChart() {
   const [readings, setReadings] = useState<BPReading[]>([])
-  const [viewMode, setViewMode] = useState<"3d" | "2d">("3d")
+  const [viewMode, setViewMode] = useState<"3d" | "2d">("2d")
 
   useEffect(() => {
     // Mock data - replace with actual API call
@@ -27,24 +25,54 @@ export function BPChart() {
     ])
   }, [])
 
+  const renderSimpleChart = () => {
+    const maxSystolic = Math.max(...readings.map((r) => r.systolic))
+    const minSystolic = Math.min(...readings.map((r) => r.systolic))
+    const maxDiastolic = Math.max(...readings.map((r) => r.diastolic))
+    const minDiastolic = Math.min(...readings.map((r) => r.diastolic))
+
+    const chartWidth = Dimensions.get("window").width - 88
+    const chartHeight = 180
+
+    return (
+      <View style={styles.chartContainer}>
+        <View style={styles.chart}>
+          {readings.map((reading, index) => {
+            const systolicHeight = ((reading.systolic - minSystolic) / (maxSystolic - minSystolic)) * chartHeight * 0.8
+            const diastolicHeight =
+              ((reading.diastolic - minDiastolic) / (maxDiastolic - minDiastolic)) * chartHeight * 0.8
+
+            return (
+              <View key={index} style={styles.barGroup}>
+                <View style={[styles.bar, styles.systolicBar, { height: systolicHeight || 20 }]} />
+                <View style={[styles.bar, styles.diastolicBar, { height: diastolicHeight || 20 }]} />
+                <Text style={styles.dateLabel}>{new Date(reading.timestamp).getDate()}</Text>
+              </View>
+            )
+          })}
+        </View>
+
+        <View style={styles.readingsSummary}>
+          <Text style={styles.summaryTitle}>Latest Reading</Text>
+          <Text style={styles.summaryValue}>
+            {readings[readings.length - 1]?.systolic}/{readings[readings.length - 1]?.diastolic} mmHg
+          </Text>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Blood Pressure Trends</Text>
-        <TouchableOpacity style={styles.toggleButton} onPress={() => setViewMode(viewMode === "3d" ? "2d" : "3d")}>
+        {/* <TouchableOpacity style={styles.toggleButton} onPress={() => setViewMode(viewMode === "3d" ? "2d" : "3d")}>
           {viewMode === "3d" ? <BarChart3 size={20} color="#059669" /> : <TrendingUp size={20} color="#059669" />}
           <Text style={styles.toggleText}>{viewMode === "3d" ? "2D View" : "3D View"}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
-      {viewMode === "3d" ? (
-        <BP3DChart readings={readings} width={300} height={200} />
-      ) : (
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>2D Chart View</Text>
-          <Text style={styles.placeholderSubtext}>Traditional chart visualization</Text>
-        </View>
-      )}
+      {renderSimpleChart()}
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
@@ -94,6 +122,57 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 12,
     fontFamily: "OpenSans-SemiBold",
+    color: "#059669",
+  },
+  chartContainer: {
+    marginBottom: 16,
+  },
+  chart: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-around",
+    height: 180,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  barGroup: {
+    alignItems: "center",
+    gap: 2,
+  },
+  bar: {
+    width: 12,
+    borderRadius: 6,
+    marginBottom: 2,
+  },
+  systolicBar: {
+    backgroundColor: "#dc2626",
+  },
+  diastolicBar: {
+    backgroundColor: "#2563eb",
+  },
+  dateLabel: {
+    fontSize: 10,
+    fontFamily: "OpenSans-Regular",
+    color: "#64748b",
+    marginTop: 4,
+  },
+  readingsSummary: {
+    backgroundColor: "#ecfdf5",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  summaryTitle: {
+    fontSize: 12,
+    fontFamily: "OpenSans-Regular",
+    color: "#059669",
+    marginBottom: 2,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontFamily: "Montserrat-SemiBold",
     color: "#059669",
   },
   placeholder: {
