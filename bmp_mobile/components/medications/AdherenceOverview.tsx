@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
-import { Medication3DSphere } from "../3d/Medication3DSphere"
 import { Eye, EyeOff } from "../ui/Icons"
 
 interface Medication {
@@ -13,7 +12,7 @@ interface Medication {
 
 export function AdherenceOverview() {
   const [medications, setMedications] = useState<Medication[]>([])
-  const [show3D, setShow3D] = useState(true)
+  const [showDetailed, setShowDetailed] = useState(true)
 
   useEffect(() => {
     // Mock data - replace with actual API call
@@ -26,13 +25,19 @@ export function AdherenceOverview() {
 
   const averageAdherence = Math.round(medications.reduce((sum, med) => sum + med.adherenceRate, 0) / medications.length)
 
+  const getAdherenceColor = (rate: number) => {
+    if (rate >= 90) return "#059669"
+    if (rate >= 75) return "#d97706"
+    return "#dc2626"
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.title}>Medication Adherence</Text>
-        <TouchableOpacity style={styles.toggleButton} onPress={() => setShow3D(!show3D)}>
-          {show3D ? <EyeOff size={20} color="#7c3aed" /> : <Eye size={20} color="#7c3aed" />}
-          <Text style={styles.toggleText}>{show3D ? "Hide 3D" : "Show 3D"}</Text>
+        <TouchableOpacity style={styles.toggleButton} onPress={() => setShowDetailed(!showDetailed)}>
+          {showDetailed ? <EyeOff size={20} color="#7c3aed" /> : <Eye size={20} color="#7c3aed" />}
+          <Text style={styles.toggleText}>{showDetailed ? "Simple View" : "Detailed View"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -42,16 +47,28 @@ export function AdherenceOverview() {
         <Text style={styles.overallSubtext}>Across {medications.length} medications</Text>
       </View>
 
-      {show3D ? (
-        <View style={styles.spheresContainer}>
+      {showDetailed ? (
+        <View style={styles.circlesContainer}>
           {medications.map((medication) => (
-            <View key={medication.id} style={styles.sphereWrapper}>
-              <Medication3DSphere
-                adherenceRate={medication.adherenceRate}
-                medicationName={medication.name}
-                width={180}
-                height={180}
-              />
+            <View key={medication.id} style={styles.circleWrapper}>
+              <View style={styles.circleContainer}>
+                <View style={[styles.circleBackground, { borderColor: "#e2e8f0" }]} />
+                <View
+                  style={[
+                    styles.circleProgress,
+                    {
+                      borderColor: getAdherenceColor(medication.adherenceRate),
+                      transform: [{ rotate: `${(medication.adherenceRate / 100) * 360 - 90}deg` }],
+                    },
+                  ]}
+                />
+                <View style={styles.circleCenter}>
+                  <Text style={[styles.adherencePercentage, { color: getAdherenceColor(medication.adherenceRate) }]}>
+                    {medication.adherenceRate}%
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.medicationNameCircle}>{medication.name}</Text>
             </View>
           ))}
         </View>
@@ -66,12 +83,7 @@ export function AdherenceOverview() {
                     styles.adherenceProgress,
                     {
                       width: `${medication.adherenceRate}%`,
-                      backgroundColor:
-                        medication.adherenceRate >= 90
-                          ? "#059669"
-                          : medication.adherenceRate >= 75
-                            ? "#d97706"
-                            : "#dc2626",
+                      backgroundColor: getAdherenceColor(medication.adherenceRate),
                     },
                   ]}
                 />
@@ -143,15 +155,56 @@ const styles = StyleSheet.create({
     fontFamily: "OpenSans-Regular",
     color: "#64748b",
   },
-  spheresContainer: {
+  circlesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-around",
     gap: 16,
   },
-  sphereWrapper: {
+  circleWrapper: {
     alignItems: "center",
     marginBottom: 20,
+  },
+  circleContainer: {
+    width: 120,
+    height: 120,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  circleBackground: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 8,
+  },
+  circleProgress: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 8,
+    borderTopColor: "transparent",
+    borderRightColor: "transparent",
+    borderBottomColor: "transparent",
+  },
+  circleCenter: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  adherencePercentage: {
+    fontSize: 18,
+    fontFamily: "Montserrat-Bold",
+  },
+  medicationNameCircle: {
+    fontSize: 14,
+    fontFamily: "Montserrat-SemiBold",
+    color: "#1e293b",
+    textAlign: "center",
+    marginTop: 8,
+    maxWidth: 120,
   },
   listContainer: {
     gap: 16,

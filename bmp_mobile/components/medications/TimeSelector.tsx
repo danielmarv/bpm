@@ -10,7 +10,7 @@ interface TimeSelectorProps {
   onTimesChange: (times: string[]) => void
 }
 
-export function TimeSelector({ frequency, selectedTimes, onTimesChange }: TimeSelectorProps) {
+export function TimeSelector({ frequency, selectedTimes = [], onTimesChange }: TimeSelectorProps) {
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [selectedHour, setSelectedHour] = useState(8)
   const [selectedMinute, setSelectedMinute] = useState(0)
@@ -30,12 +30,14 @@ export function TimeSelector({ frequency, selectedTimes, onTimesChange }: TimeSe
   const hours = Array.from({ length: 24 }, (_, i) => i)
   const minutes = [0, 15, 30, 45]
 
+  const safeTimes = selectedTimes || []
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Reminder Times</Text>
 
       <View style={styles.timesContainer}>
-        {selectedTimes.map((time) => (
+        {safeTimes.map((time) => (
           <View key={time} style={styles.timeChip}>
             <Text style={styles.timeText}>{time}</Text>
             <TouchableOpacity onPress={() => removeTime(time)}>
