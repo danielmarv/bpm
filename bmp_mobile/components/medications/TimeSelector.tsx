@@ -5,25 +5,26 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from "rea
 import { Plus, Minus } from "../ui/Icons"
 
 interface TimeSelectorProps {
-  times: string[]
+  frequency: string
+  selectedTimes: string[]
   onTimesChange: (times: string[]) => void
 }
 
-export function TimeSelector({ times, onTimesChange }: TimeSelectorProps) {
+export function TimeSelector({ frequency, selectedTimes, onTimesChange }: TimeSelectorProps) {
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [selectedHour, setSelectedHour] = useState(8)
   const [selectedMinute, setSelectedMinute] = useState(0)
 
   const addTime = () => {
     const timeString = `${selectedHour.toString().padStart(2, "0")}:${selectedMinute.toString().padStart(2, "0")}`
-    if (!times.includes(timeString)) {
-      onTimesChange([...times, timeString].sort())
+    if (!selectedTimes.includes(timeString)) {
+      onTimesChange([...selectedTimes, timeString].sort())
     }
     setShowTimePicker(false)
   }
 
   const removeTime = (timeToRemove: string) => {
-    onTimesChange(times.filter((time) => time !== timeToRemove))
+    onTimesChange(selectedTimes.filter((time) => time !== timeToRemove))
   }
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
@@ -34,7 +35,7 @@ export function TimeSelector({ times, onTimesChange }: TimeSelectorProps) {
       <Text style={styles.label}>Reminder Times</Text>
 
       <View style={styles.timesContainer}>
-        {times.map((time) => (
+        {selectedTimes.map((time) => (
           <View key={time} style={styles.timeChip}>
             <Text style={styles.timeText}>{time}</Text>
             <TouchableOpacity onPress={() => removeTime(time)}>

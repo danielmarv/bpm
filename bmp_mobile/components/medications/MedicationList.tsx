@@ -5,16 +5,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native"
 import { MedicationCard } from "./MedicationCard"
 import { PrimaryButton } from "../ui/Button"
 import { Plus } from "../ui/Icons"
-
-interface Medication {
-  id: string
-  name: string
-  dosage: string
-  frequency: string
-  nextDose: string
-  adherenceRate: number
-  isActive: boolean
-}
+import { medicationsApi, type Medication } from "../../services/medicationsApi"
 
 interface MedicationListProps {
   onAddMedication: () => void
@@ -25,40 +16,21 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    setTimeout(() => {
-      setMedications([
-        {
-          id: "1",
-          name: "Lisinopril",
-          dosage: "10mg",
-          frequency: "Once daily",
-          nextDose: "8:00 AM",
-          adherenceRate: 92,
-          isActive: true,
-        },
-        {
-          id: "2",
-          name: "Metoprolol",
-          dosage: "25mg",
-          frequency: "Twice daily",
-          nextDose: "2:00 PM",
-          adherenceRate: 88,
-          isActive: true,
-        },
-        {
-          id: "3",
-          name: "Amlodipine",
-          dosage: "5mg",
-          frequency: "Once daily",
-          nextDose: "8:00 AM",
-          adherenceRate: 95,
-          isActive: false,
-        },
-      ])
-      setLoading(false)
-    }, 1000)
+    loadMedications()
   }, [])
+
+  const loadMedications = async () => {
+    try {
+      setLoading(true)
+      const data = await medicationsApi.getAllMedications()
+      setMedications(data)
+    } catch (error) {
+      console.error("Error loading medications:", error)
+      Alert.alert("Error", "Failed to load medications. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogDose = (medicationId: string) => {
     Alert.alert("Dose Logged", "Your medication dose has been recorded successfully.")
@@ -90,8 +62,8 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
     )
   }
 
-  const activeMedications = medications.filter((med) => med.isActive)
-  const inactiveMedications = medications.filter((med) => !med.isActive)
+  const activeMedications = medications.filter((med) => med.isActive !== false)
+  const inactiveMedications = medications.filter((med) => med.isActive === false)
 
   return (
     <View style={styles.container}>

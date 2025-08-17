@@ -6,6 +6,7 @@ import { PrimaryButton, SecondaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
 import { FrequencySelector } from "./FrequencySelector"
 import { TimeSelector } from "./TimeSelector"
+import { medicationsApi } from "../../services/medicationsApi"
 
 interface AddMedicationFormProps {
   onMedicationAdded: () => void
@@ -14,8 +15,9 @@ interface AddMedicationFormProps {
 export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps) {
   const [formData, setFormData] = useState({
     name: "",
-    dosage: "",
-    frequency: "once_daily",
+    dosageAmount: "",
+    dosageUnit: "mg",
+    frequency: "once_daily" as const,
     times: ["08:00"],
     instructions: "",
     startDate: new Date().toISOString().split("T")[0],
@@ -23,15 +25,25 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.dosage) {
+    if (!formData.name || !formData.dosageAmount) {
       Alert.alert("Error", "Please fill in medication name and dosage")
       return
     }
 
     try {
       setLoading(true)
-      // Mock API call - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      const medicationData = {
+        name: formData.name,
+        dosage: {
+          amount: Number.parseFloat(formData.dosageAmount),
+          unit: formData.dosageUnit,
+        },
+        frequency: formData.frequency,
+        startDate: formData.startDate,
+      }
+
+      await medicationsApi.createMedication(medicationData)
 
       Alert.alert("Success", "Medication added successfully", [
         {
@@ -40,6 +52,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
         },
       ])
     } catch (error) {
+      console.error("Error adding medication:", error)
       Alert.alert("Error", "Failed to add medication. Please try again.")
     } finally {
       setLoading(false)
@@ -66,30 +79,36 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Dosage *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.dosage}
-            onChangeText={(value) => updateFormData("dosage", value)}
-            placeholder="e.g., 10mg"
-            placeholderTextColor="#94a3b8"
-          />
+          <View style={styles.dosageContainer}>
+            <TextInput
+              style={[styles.input, styles.dosageAmountInput]}
+              value={formData.dosageAmount}
+              onChangeText={(value) => updateFormData("dosageAmount", value)}
+              placeholder="10"
+              placeholderTextColor="#94a3b8"
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={[styles.input, styles.dosageUnitInput]}
+              value={formData.dosageUnit}
+              onChangeText={(value) => updateFormData("dosageUnit", value)}
+              placeholder="mg"
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Frequency</Text>
           <FrequencySelector
-            selectedFrequency={formData.frequency}
-            onFrequencyChange={(frequency) => updateFormData("frequency", frequency)}
+            value={formData.frequency}
+            onValueChange={(frequency) => updateFormData("frequency", frequency)}
           />
         </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Reminder Times</Text>
-          <TimeSelector
-            frequency={formData.frequency}
-            selectedTimes={formData.times}
-            onTimesChange={(times) => updateFormData("times", times)}
-          />
+          <TimeSelector times={formData.times} onTimesChange={(times) => updateFormData("times", times)} />
         </View>
 
         <View style={styles.inputContainer}>
@@ -154,6 +173,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderWidth: 1,
     borderColor: "#e2e8f0",
+  },
+  dosageContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dosageAmountInput: {
+    flex: 2,
+  },
+  dosageUnitInput: {
+    flex: 1,
   },
   textArea: {
     height: 80,
