@@ -88,12 +88,137 @@ router.get("/profile", authenticate, getProfile)
  */
 router.put("/profile", authenticate, updateProfileValidation, updateProfile)
 
+/**
+ * @swagger
+ * /api/users/bp-thresholds:
+ *   put:
+ *     summary: Update user blood pressure thresholds
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               systolicHigh:
+ *                 type: integer
+ *               systolicLow:
+ *                 type: integer
+ *               diastolicHigh:
+ *                 type: integer
+ *               diastolicLow:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: BP thresholds updated successfully
+ *       400:
+ *         description: Validation error
+ */
 router.put("/bp-thresholds", authenticate, updateThresholdsValidation, updateBPThresholds)
+
+/**
+ * @swagger
+ * /api/users/change-password:
+ *   put:
+ *     summary: Change user password
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Validation error or incorrect current password
+ */
 router.put("/change-password", authenticate, changePasswordValidation, changePassword)
+
+/**
+ * @swagger
+ * /api/users/account:
+ *   delete:
+ *     summary: Deactivate user account
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account deactivated successfully
+ */
 router.delete("/account", authenticate, deleteAccount)
 
-// Admin routes
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Get all users (Admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           description: Filter by role
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *           description: Search by first name, last name, or email
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ */
 router.get("/", authenticate, authorize("admin"), getAllUsers)
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get a user by ID (Admin/Provider)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *       404:
+ *         description: User not found
+ */
 router.get("/:id", authenticate, authorize("admin", "provider"), param("id").isMongoId(), getUserById)
 
 export default router
