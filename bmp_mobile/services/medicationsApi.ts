@@ -13,15 +13,27 @@ const storage = {
 }
 
 interface Medication {
-  id?: string
+  _id?: string
   name: string
   dosage: {
     amount: number
     unit: string
   }
-  frequency: "once_daily" | "twice_daily" | "three_times_daily" | "four_times_daily" | "as_needed"
+  frequency:
+    | "once_daily"
+    | "twice_daily"
+    | "three_times_daily"
+    | "four_times_daily"
+    | "as_needed"
   startDate: string
-  isActive?: boolean
+  active: boolean
+  sideEffects: string[]
+  customSchedule: string[]
+  reminderSchedule: {
+    enabled: boolean
+    times: string[]
+    daysOfWeek: string[]
+  }
   userId?: string
   createdAt?: string
   updatedAt?: string
@@ -32,7 +44,7 @@ interface MedicationFilters {
 }
 
 interface AdherenceRecord {
-  id: string
+  _id: string
   medicationId: string
   taken: boolean
   timestamp: string
@@ -72,7 +84,10 @@ class MedicationsApi {
   }
 
   async createMedication(
-    medication: Omit<Medication, "id" | "userId" | "createdAt" | "updatedAt" | "isActive">,
+    medication: Omit<
+      Medication,
+      "_id" | "userId" | "createdAt" | "updatedAt"
+    >,
   ): Promise<Medication> {
     try {
       const headers = await this.getAuthHeaders()
@@ -85,7 +100,9 @@ class MedicationsApi {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`,
+        )
       }
 
       const responseData: ApiResponse<Medication> = await response.json()
@@ -100,7 +117,6 @@ class MedicationsApi {
     try {
       const headers = await this.getAuthHeaders()
 
-      // Build query parameters
       const queryParams = new URLSearchParams()
       if (filters?.active !== undefined) {
         queryParams.append("active", filters.active.toString())
@@ -116,7 +132,9 @@ class MedicationsApi {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`,
+        )
       }
 
       const responseData: ApiResponse<Medication[]> = await response.json()
@@ -127,7 +145,6 @@ class MedicationsApi {
     }
   }
 
-  // Convenience methods for common queries
   async getActiveMedications(): Promise<Medication[]> {
     return this.getMedications({ active: true })
   }
@@ -147,19 +164,24 @@ class MedicationsApi {
     try {
       const headers = await this.getAuthHeaders()
 
-      const response = await fetch(`${API_URL}/medications/${medicationId}/adherence`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          taken: adherenceData.taken,
-          timestamp: adherenceData.timestamp || new Date().toISOString(),
-          notes: adherenceData.notes,
-        }),
-      })
+      const response = await fetch(
+        `${API_URL}/medications/${medicationId}/adherence`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            taken: adherenceData.taken,
+            timestamp: adherenceData.timestamp || new Date().toISOString(),
+            notes: adherenceData.notes,
+          }),
+        },
+      )
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`,
+        )
       }
 
       const responseData: ApiResponse<AdherenceRecord> = await response.json()
@@ -170,11 +192,13 @@ class MedicationsApi {
     }
   }
 
-  async getAdherence(medicationId: string, filters?: AdherenceFilters): Promise<AdherenceResponse> {
+  async getAdherence(
+    medicationId: string,
+    filters?: AdherenceFilters,
+  ): Promise<AdherenceResponse> {
     try {
       const headers = await this.getAuthHeaders()
 
-      // Build query parameters
       const queryParams = new URLSearchParams()
       if (filters?.startDate) {
         queryParams.append("startDate", filters.startDate)
@@ -184,7 +208,9 @@ class MedicationsApi {
       }
 
       const queryString = queryParams.toString()
-      const url = `${API_URL}/medications/${medicationId}/adherence${queryString ? `?${queryString}` : ""}`
+      const url = `${API_URL}/medications/${medicationId}/adherence${
+        queryString ? `?${queryString}` : ""
+      }`
 
       const response = await fetch(url, {
         method: "GET",
@@ -193,7 +219,9 @@ class MedicationsApi {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`,
+        )
       }
 
       const responseData: ApiResponse<AdherenceResponse> = await response.json()
@@ -204,21 +232,33 @@ class MedicationsApi {
     }
   }
 
-  // Convenience methods for adherence tracking
-  async markAsTaken(medicationId: string, notes?: string): Promise<AdherenceRecord> {
+  async markAsTaken(
+    medicationId: string,
+    notes?: string,
+  ): Promise<AdherenceRecord> {
     return this.logAdherence(medicationId, { taken: true, notes })
   }
 
-  async markAsSkipped(medicationId: string, notes?: string): Promise<AdherenceRecord> {
+  async markAsSkipped(
+    medicationId: string,
+    notes?: string,
+  ): Promise<AdherenceRecord> {
     return this.logAdherence(medicationId, { taken: false, notes })
   }
 
-  async getTodayAdherence(medicationId: string): Promise<AdherenceResponse> {
+  async getTodayAdherence(
+    medicationId: string,
+  ): Promise<AdherenceResponse> {
     const today = new Date().toISOString().split("T")[0]
-    return this.getAdherence(medicationId, { startDate: today, endDate: today })
+    return this.getAdherence(medicationId, {
+      startDate: today,
+      endDate: today,
+    })
   }
 
-  async getWeeklyAdherence(medicationId: string): Promise<AdherenceResponse> {
+  async getWeeklyAdherence(
+    medicationId: string,
+  ): Promise<AdherenceResponse> {
     const today = new Date()
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
     return this.getAdherence(medicationId, {
@@ -228,8 +268,13 @@ class MedicationsApi {
   }
 }
 
-// Export a singleton instance
 export const medicationsApi = new MedicationsApi()
 
-// Export types for use in components
-export type { Medication, MedicationFilters, AdherenceRecord, AdherenceFilters, AdherenceResponse, ApiResponse }
+export type {
+  Medication,
+  MedicationFilters,
+  AdherenceRecord,
+  AdherenceFilters,
+  AdherenceResponse,
+  ApiResponse,
+}

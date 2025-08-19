@@ -23,6 +23,7 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
     try {
       setLoading(true)
       const data = await medicationsApi.getAllMedications()
+      console.log("Loaded medications:", data)
       setMedications(data)
     } catch (error) {
       console.error("Error loading medications:", error)
@@ -62,8 +63,8 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
     )
   }
 
-  const activeMedications = medications.filter((med) => med.isActive !== false)
-  const inactiveMedications = medications.filter((med) => med.isActive === false)
+  const activeMedications = medications.filter((med) => med.active !== false)
+  const inactiveMedications = medications.filter((med) => med.active === false)
 
   return (
     <View style={styles.container}>
@@ -78,10 +79,10 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
 
         {activeMedications.map((medication) => (
           <MedicationCard
-            key={medication.id}
+            key={medication._id}
             medication={medication}
-            onLogDose={() => handleLogDose(medication.id)}
-            onEdit={() => handleEditMedication(medication.id)}
+            onLogDose={() => handleLogDose(medication._id)}
+            onEdit={() => handleEditMedication(medication._id)}
           />
         ))}
       </View>
@@ -92,10 +93,10 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
           <Text style={styles.sectionTitle}>Inactive Medications ({inactiveMedications.length})</Text>
           {inactiveMedications.map((medication) => (
             <MedicationCard
-              key={medication.id}
+              key={medication._id}
               medication={medication}
-              onLogDose={() => handleLogDose(medication.id)}
-              onEdit={() => handleEditMedication(medication.id)}
+              onLogDose={() => handleLogDose(medication._id)}
+              onEdit={() => handleEditMedication(medication._id)}
             />
           ))}
         </View>
