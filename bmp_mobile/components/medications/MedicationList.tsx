@@ -22,7 +22,7 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
   const loadMedications = async () => {
     try {
       setLoading(true)
-      const data = await medicationsApi.getAllMedications()
+      const data = await medicationsApi.getMedications()
       console.log("Loaded medications:", data)
       setMedications(data)
     } catch (error) {
