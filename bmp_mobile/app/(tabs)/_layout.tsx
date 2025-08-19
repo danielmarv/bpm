@@ -1,12 +1,18 @@
+"use client"
+
 import { Tabs } from "expo-router"
+import { Platform, Dimensions, ViewStyle } from "react-native"
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming 
+} from "react-native-reanimated"
 import { Heart, Activity, Pill, MessageSquare, User } from "../../components/ui/Icons"
-import { Platform, Dimensions } from "react-native"
 
 const { height: screenHeight } = Dimensions.get("window")
+const TAB_HEIGHT = Platform.OS === "ios" ? 90 : 80
 
 export default function TabLayout() {
-  const tabBarHeight = Platform.OS === "ios" ? 90 : 80
-
   return (
     <Tabs
       screenOptions={{
@@ -17,7 +23,7 @@ export default function TabLayout() {
           backgroundColor: "#ffffff",
           borderTopWidth: 1,
           borderTopColor: "#e2e8f0",
-          height: tabBarHeight,
+          height: TAB_HEIGHT,
           paddingBottom: Platform.OS === "ios" ? 20 : 8,
           paddingTop: 8,
           shadowColor: "#000",
@@ -31,46 +37,76 @@ export default function TabLayout() {
           fontFamily: "OpenSans-SemiBold",
           marginTop: 4,
         },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-        },
+        tabBarItemStyle: { paddingVertical: 4 },
       }}
     >
       <Tabs.Screen
         name="dashboard"
         options={{
           title: "Dashboard",
-          tabBarIcon: ({ color, size }) => <Heart size={size + 2} color={color} />,
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Heart} />,
         }}
       />
       <Tabs.Screen
         name="tracking"
         options={{
           title: "BP Tracking",
-          tabBarIcon: ({ color, size }) => <Activity size={size + 2} color={color} />,
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Activity} />,
         }}
       />
       <Tabs.Screen
         name="medications"
         options={{
           title: "Medications",
-          tabBarIcon: ({ color, size }) => <Pill size={size + 2} color={color} />,
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Pill} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: "Messages",
-          tabBarIcon: ({ color, size }) => <MessageSquare size={size + 2} color={color} />,
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={MessageSquare} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => <User size={size + 2} color={color} />,
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={User} />,
         }}
       />
     </Tabs>
+  )
+}
+
+// Animated Icon Component
+type TabIconProps = {
+  focused: boolean
+  color: string
+  size: number
+  Icon: (props: { color: string; size: number }) => JSX.Element
+}
+
+function AnimatedTabIcon({ focused, color, size, Icon }: TabIconProps) {
+  const scale = useSharedValue(focused ? 1.3 : 1)
+  const rotateX = useSharedValue(focused ? "15deg" : "0deg")
+
+  // Animate values
+  scale.value = withTiming(focused ? 1.3 : 1)
+  rotateX.value = withTiming(focused ? "15deg" : "0deg")
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value, rotateX: rotateX.value }],
+      shadowOpacity: withTiming(focused ? 0.25 : 0),
+      shadowRadius: withTiming(focused ? 6 : 0),
+      elevation: withTiming(focused ? 8 : 0),
+    } as ViewStyle
+  })
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Icon color={color} size={size + 2} />
+    </Animated.View>
   )
 }
