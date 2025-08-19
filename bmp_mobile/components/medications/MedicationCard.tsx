@@ -17,9 +17,14 @@ export function MedicationCard({ medication, onLogDose, onEdit }: MedicationCard
             {medication.name}
           </Text>
           <Text style={styles.dosageInfo}>
-            {medication.dosage.amount} {medication.dosage.unit} • {medication.frequency}
+            {medication.dosage.amount} {medication.dosage.unit} • {formatFrequency(medication.frequency)}
           </Text>
           <Text style={styles.startDate}>Started: {new Date(medication.startDate).toLocaleDateString()}</Text>
+          {medication.reminderSchedule?.enabled && (
+            <Text style={styles.reminderTimes}>
+              Reminders: {medication.reminderSchedule.times.join(", ")}
+            </Text>
+          )}
         </View>
         <TouchableOpacity onPress={onEdit} style={styles.editButton}>
           <Edit3 size={16} color="#64748b" />
@@ -27,13 +32,10 @@ export function MedicationCard({ medication, onLogDose, onEdit }: MedicationCard
       </View>
 
       {medication.active ? (
-        <>
-          {/* Log Dose Button */}
-          <TouchableOpacity style={styles.logButton} onPress={onLogDose} activeOpacity={0.8}>
-            <CheckCircle size={20} color="#ffffff" />
-            <Text style={styles.logButtonText}>Log Dose</Text>
-          </TouchableOpacity>
-        </>
+        <TouchableOpacity style={styles.logButton} onPress={onLogDose} activeOpacity={0.8}>
+          <CheckCircle size={20} color="#ffffff" />
+          <Text style={styles.logButtonText}>Log Dose</Text>
+        </TouchableOpacity>
       ) : (
         <View style={styles.inactiveLabel}>
           <Text style={styles.inactiveLabelText}>Inactive</Text>
@@ -41,6 +43,26 @@ export function MedicationCard({ medication, onLogDose, onEdit }: MedicationCard
       )}
     </View>
   )
+}
+
+// Helper to format frequency nicely
+function formatFrequency(frequency: Medication["frequency"]) {
+  switch (frequency) {
+    case "once_daily":
+      return "Once Daily"
+    case "twice_daily":
+      return "Twice Daily"
+    case "three_times_daily":
+      return "Three Times Daily"
+    case "four_times_daily":
+      return "Four Times Daily"
+    case "as_needed":
+      return "As Needed"
+    case "custom":
+      return "Custom"
+    default:
+      return frequency
+  }
 }
 
 const styles = StyleSheet.create({
@@ -87,6 +109,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "OpenSans-Regular",
     color: "#94a3b8",
+  },
+  reminderTimes: {
+    fontSize: 12,
+    fontFamily: "OpenSans-Regular",
+    color: "#059669",
+    marginTop: 4,
   },
   editButton: {
     width: 32,

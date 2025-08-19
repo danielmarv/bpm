@@ -6,7 +6,7 @@ import { PrimaryButton, SecondaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
 import { FrequencySelector } from "./FrequencySelector"
 import { TimeSelector } from "./TimeSelector"
-import { medicationsApi } from "../../services/medicationsApi"
+import { medicationsApi, Medication } from "../../services/medicationsApi"
 
 interface AddMedicationFormProps {
   onMedicationAdded: () => void
@@ -17,7 +17,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
     name: "",
     dosageAmount: "",
     dosageUnit: "mg",
-    frequency: "once_daily" as const,
+    frequency: "once_daily" as Medication["frequency"],
     times: ["08:00"],
     instructions: "",
     startDate: new Date().toISOString().split("T")[0],
@@ -33,7 +33,8 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
     try {
       setLoading(true)
 
-      const medicationData = {
+      // Include required fields per Medication type
+      const medicationData: Omit<Medication, "_id" | "userId" | "createdAt" | "updatedAt"> = {
         name: formData.name,
         dosage: {
           amount: Number.parseFloat(formData.dosageAmount),
@@ -41,15 +42,20 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
         },
         frequency: formData.frequency,
         startDate: formData.startDate,
+        active: true,
+        sideEffects: [],
+        customSchedule: [],
+        reminderSchedule: {
+          enabled: true,
+          times: formData.times,
+          daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], // Default all days
+        },
       }
 
       await medicationsApi.createMedication(medicationData)
 
       Alert.alert("Success", "Medication added successfully", [
-        {
-          text: "OK",
-          onPress: onMedicationAdded,
-        },
+        { text: "OK", onPress: onMedicationAdded },
       ])
     } catch (error) {
       console.error("Error adding medication:", error)
@@ -108,7 +114,12 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Reminder Times</Text>
-          <TimeSelector times={formData.times} onTimesChange={(times) => updateFormData("times", times)} />
+          <TimeSelector
+            frequency={formData.frequency}
+            selectedTimes={formData.times}        // <-- matches TimeSelector
+            onTimesChange={(times) => updateFormData("times", times)} // <-- matches TimeSelector
+          />
+
         </View>
 
         <View style={styles.inputContainer}>
@@ -141,61 +152,16 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  form: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-    marginBottom: 8,
-  },
-  input: {
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  dosageContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  dosageAmountInput: {
-    flex: 2,
-  },
-  dosageUnitInput: {
-    flex: 1,
-  },
-  textArea: {
-    height: 80,
-    paddingTop: 14,
-  },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 8,
-  },
-  primaryButton: {
-    backgroundColor: "#7c3aed",
-  },
-  secondaryButton: {
-    borderColor: "#7c3aed",
-  },
+  container: { flex: 1 },
+  form: { backgroundColor: "#ffffff", borderRadius: 16, padding: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
+  inputContainer: { marginBottom: 24 },
+  label: { fontSize: 16, fontFamily: "Montserrat-SemiBold", color: "#1e293b", marginBottom: 8 },
+  input: { fontSize: 16, fontFamily: "OpenSans-Regular", color: "#1e293b", backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: "#e2e8f0" },
+  dosageContainer: { flexDirection: "row", gap: 12 },
+  dosageAmountInput: { flex: 2 },
+  dosageUnitInput: { flex: 1 },
+  textArea: { height: 80, paddingTop: 14 },
+  buttonContainer: { gap: 12, marginTop: 8 },
+  primaryButton: { backgroundColor: "#7c3aed" },
+  secondaryButton: { borderColor: "#7c3aed" },
 })
