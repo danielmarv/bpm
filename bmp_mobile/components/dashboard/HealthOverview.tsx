@@ -1,33 +1,60 @@
 "use client"
 
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { Eye, EyeOff, TrendUp } from "../ui/Icons"
-import { useState } from "react"
+import { Eye, EyeOff, TrendUp, TrendDown, Minus } from "../ui/Icons"
+import { useState, useEffect } from "react"
+import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
 
 interface BPStats {
-  latest: { systolic: number; diastolic: number; pulse: number; timestamp: string }
+  latest: BloodPressureReading
   average: { systolic: number; diastolic: number }
   trend: "improving" | "stable" | "concerning"
 }
 
-interface HealthOverviewProps {
-  stats: BPStats
-}
+interface HealthOverviewProps {}
 
-export function HealthOverview({ stats }: HealthOverviewProps) {
+export function HealthOverview({}: HealthOverviewProps) {
   const [showDetailed, setShowDetailed] = useState(true)
+  const [stats, setStats] = useState<BPStats | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Mock health data - in real app, this would come from various sources
-  const healthData = {
-    exercise: 75, // Based on weekly activity
-    diet: 68, // Based on nutrition tracking
-    weight: 82, // Based on weight trends
-    bloodPressure: 85, // Based on BP readings
+  useEffect(() => {
+    fetchBPStats()
+  }, [])
+
+  const fetchBPStats = async () => {
+    try {
+      setLoading(true)
+      // Fetch latest BP readings
+      const response = await bloodPressureApi.getReadings({ limit: 30, page: 1 })
+      const readings = response.readings
+
+      if (readings.length === 0) return
+
+      const latest = readings[0]
+      const avgSystolic = Math.round(readings.reduce((sum, r) => sum + r.systolic, 0) / readings.length)
+      const avgDiastolic = Math.round(readings.reduce((sum, r) => sum + r.diastolic, 0) / readings.length)
+
+      // Determine trend based on last two readings
+      let trend: BPStats["trend"] = "stable"
+      if (readings.length >= 2) {
+        const prevAvg = (readings[1].systolic + readings[1].diastolic) / 2
+        const currAvg = (latest.systolic + latest.diastolic) / 2
+        if (currAvg > prevAvg + 2) trend = "concerning"
+        else if (currAvg < prevAvg - 2) trend = "improving"
+      }
+
+      setStats({
+        latest,
+        average: { systolic: avgSystolic, diastolic: avgDiastolic },
+        trend,
+      })
+    } catch (error) {
+      console.error("Error fetching BP stats:", error)
+    } finally {
+      setLoading(false)
+    }
   }
-
-  const overallScore = Math.round(
-    (healthData.exercise + healthData.diet + healthData.weight + healthData.bloodPressure) / 4,
-  )
 
   const getBPCategory = (systolic: number, diastolic: number) => {
     if (systolic < 120 && diastolic < 80) return { category: "Normal", color: "#059669" }
@@ -36,12 +63,9 @@ export function HealthOverview({ stats }: HealthOverviewProps) {
     return { category: "Stage 2", color: "#991b1b" }
   }
 
-  const { category, color } = getBPCategory(stats.latest.systolic, stats.latest.diastolic)
-
   const CircularProgress = ({ value, size = 80, strokeWidth = 8, color = "#059669" }) => {
     const radius = (size - strokeWidth) / 2
     const circumference = radius * 2 * Math.PI
-    const strokeDasharray = circumference
     const strokeDashoffset = circumference - (value / 100) * circumference
 
     return (
@@ -105,6 +129,17 @@ export function HealthOverview({ stats }: HealthOverviewProps) {
     )
   }
 
+  if (loading || !stats) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: "#64748b", fontFamily: "OpenSans-Regular" }}>Loading health overview...</Text>
+      </View>
+    )
+  }
+
+  const { category, color } = getBPCategory(stats.latest.systolic, stats.latest.diastolic)
+  const overallScore = Math.round((stats.latest.systolic + stats.latest.diastolic) / 2) // Example BP-based score
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -120,27 +155,8 @@ export function HealthOverview({ stats }: HealthOverviewProps) {
           <View style={styles.scoreContainer}>
             <CircularProgress value={overallScore} size={100} color="#059669" />
             <View style={styles.trendIndicator}>
-              <TrendUp size={16} color="#059669" />
-              <Text style={styles.trendText}>Improving</Text>
-            </View>
-          </View>
-
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricCard}>
-              <CircularProgress value={healthData.exercise} size={60} color="#2563eb" />
-              <Text style={styles.metricLabel}>Exercise</Text>
-            </View>
-            <View style={styles.metricCard}>
-              <CircularProgress value={healthData.diet} size={60} color="#d97706" />
-              <Text style={styles.metricLabel}>Diet</Text>
-            </View>
-            <View style={styles.metricCard}>
-              <CircularProgress value={healthData.weight} size={60} color="#7c3aed" />
-              <Text style={styles.metricLabel}>Weight</Text>
-            </View>
-            <View style={styles.metricCard}>
-              <CircularProgress value={healthData.bloodPressure} size={60} color="#dc2626" />
-              <Text style={styles.metricLabel}>BP</Text>
+              {stats.trend === "improving" ? <TrendUp size={16} color="#059669" /> : stats.trend === "concerning" ? <TrendDown size={16} color="#dc2626" /> : <Minus size={16} color="#64748b" />}
+              <Text style={styles.trendText}>{stats.trend.charAt(0).toUpperCase() + stats.trend.slice(1)}</Text>
             </View>
           </View>
         </View>
@@ -158,29 +174,10 @@ export function HealthOverview({ stats }: HealthOverviewProps) {
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{overallScore}</Text>
             <Text style={styles.statLabel}>Health Score</Text>
-            <Text style={styles.statSubtext}>out of 100</Text>
+            <Text style={styles.statSubtext}>BP-based</Text>
           </View>
         </View>
       )}
-
-      <View style={styles.metricsRow}>
-        <View style={styles.metricItem}>
-          <View style={[styles.metricDot, { backgroundColor: "#2563eb" }]} />
-          <Text style={styles.metricText}>Exercise {healthData.exercise}%</Text>
-        </View>
-        <View style={styles.metricItem}>
-          <View style={[styles.metricDot, { backgroundColor: "#d97706" }]} />
-          <Text style={styles.metricText}>Diet {healthData.diet}%</Text>
-        </View>
-        <View style={styles.metricItem}>
-          <View style={[styles.metricDot, { backgroundColor: "#7c3aed" }]} />
-          <Text style={styles.metricText}>Weight {healthData.weight}%</Text>
-        </View>
-        <View style={styles.metricItem}>
-          <View style={[styles.metricDot, { backgroundColor: "#dc2626" }]} />
-          <Text style={styles.metricText}>BP {healthData.bloodPressure}%</Text>
-        </View>
-      </View>
     </View>
   )
 }
@@ -239,29 +236,9 @@ const styles = StyleSheet.create({
     fontFamily: "OpenSans-SemiBold",
     color: "#059669",
   },
-  metricsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  metricCard: {
-    alignItems: "center",
-    width: "48%",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    padding: 12,
-  },
-  metricLabel: {
-    fontSize: 12,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
-    marginTop: 8,
-  },
   statsGrid: {
     flexDirection: "row",
     gap: 16,
-    marginBottom: 20,
   },
   statCard: {
     flex: 1,
@@ -296,26 +273,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "OpenSans-SemiBold",
     color: "#ffffff",
-  },
-  metricsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "center",
-  },
-  metricItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  metricDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  metricText: {
-    fontSize: 12,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
   },
 })

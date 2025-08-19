@@ -3,13 +3,9 @@
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native"
 import { TrendUp, TrendDown, Minus, Clock } from "../ui/Icons"
+import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
 
-interface BPReading {
-  id: string
-  systolic: number
-  diastolic: number
-  pulse: number
-  timestamp: string
+interface BPReading extends BloodPressureReading {
   category: "normal" | "elevated" | "high" | "low"
 }
 
@@ -18,41 +14,37 @@ export function RecentReadings() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockReadings: BPReading[] = [
-      {
-        id: "1",
-        systolic: 125,
-        diastolic: 82,
-        pulse: 74,
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        category: "normal",
-      },
-      {
-        id: "2",
-        systolic: 130,
-        diastolic: 85,
-        pulse: 78,
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        category: "elevated",
-      },
-      {
-        id: "3",
-        systolic: 122,
-        diastolic: 79,
-        pulse: 72,
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        category: "normal",
-      },
-    ]
-
-    setTimeout(() => {
-      setReadings(mockReadings)
-      setLoading(false)
-    }, 500)
+    loadReadings()
   }, [])
 
-  const getCategoryColor = (category: string) => {
+  const loadReadings = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch last 10 readings from API
+      const response = await bloodPressureApi.getReadings({ limit: 10, page: 1 })
+      const apiReadings = response.readings.map((r) => ({
+        ...r,
+        category: getCategory(r.systolic, r.diastolic),
+      }))
+
+      setReadings(apiReadings)
+    } catch (error) {
+      console.error("Error fetching recent readings:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getCategory = (systolic: number, diastolic: number): BPReading["category"] => {
+    if (systolic < 120 && diastolic < 80) return "normal"
+    if (systolic < 130 && diastolic < 80) return "elevated"
+    if (systolic >= 140 || diastolic >= 90) return "high"
+    if (systolic < 90 || diastolic < 60) return "low"
+    return "normal"
+  }
+
+  const getCategoryColor = (category: BPReading["category"]) => {
     switch (category) {
       case "normal":
         return "#059669"
@@ -73,11 +65,8 @@ export function RecentReadings() {
     const currentAvg = (current.systolic + current.diastolic) / 2
     const previousAvg = (previous.systolic + previous.diastolic) / 2
 
-    if (currentAvg > previousAvg + 2) {
-      return <TrendUp size={16} color="#dc2626" />
-    } else if (currentAvg < previousAvg - 2) {
-      return <TrendDown size={16} color="#059669" />
-    }
+    if (currentAvg > previousAvg + 2) return <TrendUp size={16} color="#dc2626" />
+    if (currentAvg < previousAvg - 2) return <TrendDown size={16} color="#059669" />
     return <Minus size={16} color="#6b7280" />
   }
 

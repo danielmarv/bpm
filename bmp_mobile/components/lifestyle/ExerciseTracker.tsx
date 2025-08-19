@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from "reac
 import { PrimaryButton, SecondaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
 import { ArrowLeft, Clock, Zap } from "../ui/Icons"
+import { activitiesApi } from "../../services/activitiesApi"
 
 interface ExerciseTrackerProps {
   onBack: () => void
@@ -41,8 +42,14 @@ export function ExerciseTracker({ onBack }: ExerciseTrackerProps) {
 
     try {
       setLoading(true)
-      // Mock API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      await activitiesApi.logExercise(new Date().toISOString(), {
+        type: formData.activity,
+        duration: Number(formData.duration),
+        intensity: formData.intensity,
+        calories: formData.calories ? Number(formData.calories) : undefined,
+        notes: formData.notes || undefined,
+      })
 
       Alert.alert("Success", "Exercise logged successfully", [
         {
@@ -59,6 +66,7 @@ export function ExerciseTracker({ onBack }: ExerciseTrackerProps) {
         },
       ])
     } catch (error) {
+      console.error("Failed to log exercise:", error)
       Alert.alert("Error", "Failed to log exercise. Please try again.")
     } finally {
       setLoading(false)
@@ -174,142 +182,28 @@ export function ExerciseTracker({ onBack }: ExerciseTrackerProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#f1f5f9",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 20,
-    fontFamily: "Montserrat-Bold",
-    color: "#1e293b",
-  },
-  placeholder: {
-    width: 40,
-  },
-  form: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-    marginBottom: 12,
-  },
-  activitiesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  activityChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  selectedChip: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
-  },
-  chipText: {
-    fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
-  },
-  selectedChipText: {
-    color: "#ffffff",
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-    paddingVertical: 12,
-    paddingLeft: 12,
-  },
-  textInput: {
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  textArea: {
-    height: 80,
-    paddingTop: 14,
-  },
-  intensityContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  intensityButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    gap: 8,
-  },
-  selectedIntensity: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
-  },
-  intensityText: {
-    fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
-  },
-  selectedIntensityText: {
-    color: "#ffffff",
-  },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 8,
-  },
-  submitButton: {
-    backgroundColor: "#2563eb",
-  },
+  container: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#f1f5f9", justifyContent: "center", alignItems: "center" },
+  title: { fontSize: 20, fontFamily: "Montserrat-Bold", color: "#1e293b" },
+  placeholder: { width: 40 },
+  form: { backgroundColor: "#ffffff", borderRadius: 16, padding: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
+  inputContainer: { marginBottom: 24 },
+  label: { fontSize: 16, fontFamily: "Montserrat-SemiBold", color: "#1e293b", marginBottom: 12 },
+  activitiesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  activityChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: "#f1f5f9", borderWidth: 1, borderColor: "#e2e8f0" },
+  selectedChip: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
+  chipText: { fontSize: 14, fontFamily: "OpenSans-SemiBold", color: "#64748b" },
+  selectedChipText: { color: "#ffffff" },
+  inputWrapper: { flexDirection: "row", alignItems: "center", backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 4, borderWidth: 1, borderColor: "#e2e8f0" },
+  input: { flex: 1, fontSize: 16, fontFamily: "OpenSans-Regular", color: "#1e293b", paddingVertical: 12, paddingLeft: 12 },
+  textInput: { fontSize: 16, fontFamily: "OpenSans-Regular", color: "#1e293b", backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: "#e2e8f0" },
+  textArea: { height: 80, paddingTop: 14 },
+  intensityContainer: { flexDirection: "row", gap: 12 },
+  intensityButton: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, backgroundColor: "#f1f5f9", borderWidth: 1, borderColor: "#e2e8f0", gap: 8 },
+  selectedIntensity: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
+  intensityText: { fontSize: 14, fontFamily: "OpenSans-SemiBold", color: "#64748b" },
+  selectedIntensityText: { color: "#ffffff" },
+  buttonContainer: { gap: 12, marginTop: 8 },
+  submitButton: { backgroundColor: "#2563eb" },
 })

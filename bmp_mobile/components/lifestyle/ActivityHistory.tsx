@@ -2,22 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from "react-native"
-import { activitiesApi } from "../../services/activitiesApi"
+import { activitiesApi, type Activity } from "../../services/activitiesApi"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
 import { Calendar, Clock, Zap, Filter } from "../ui/Icons"
-
-interface Activity {
-  id: string
-  type: string
-  date: string
-  data: {
-    type?: string
-    duration?: number
-    intensity?: string
-    calories?: number
-    notes?: string
-  }
-}
 
 export function ActivityHistory() {
   const [activities, setActivities] = useState<Activity[]>([])
@@ -27,12 +14,24 @@ export function ActivityHistory() {
 
   const loadActivities = async (showRefresh = false) => {
     try {
-      if (showRefresh) setRefreshing(true)
-      else setLoading(true)
+      showRefresh ? setRefreshing(true) : setLoading(true)
+      let data: Activity[] = []
 
-      const filterType = filter === "all" ? undefined : filter
-      const response = await activitiesApi.getActivities({ type: filterType })
-      setActivities(response.activities || [])
+      switch (filter) {
+        case "exercise":
+          data = await activitiesApi.getExerciseActivities()
+          break
+        case "diet":
+          data = await activitiesApi.getDietActivities()
+          break
+        case "weight":
+          data = await activitiesApi.getWeightActivities()
+          break
+        default:
+          data = await activitiesApi.getActivities()
+      }
+
+      setActivities(data || [])
     } catch (error) {
       console.error("Failed to load activities:", error)
       setActivities([])
@@ -157,9 +156,7 @@ export function ActivityHistory() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   filterContainer: {
     flexDirection: "row",
     backgroundColor: "#ffffff",
@@ -172,27 +169,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  activeFilterTab: {
-    backgroundColor: "#ecfdf5",
-  },
-  filterText: {
-    fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
-  },
-  activeFilterText: {
-    color: "#059669",
-  },
-  scrollView: {
-    flex: 1,
-  },
+  filterTab: { flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, alignItems: "center" },
+  activeFilterTab: { backgroundColor: "#ecfdf5" },
+  filterText: { fontSize: 14, fontFamily: "OpenSans-SemiBold", color: "#64748b" },
+  activeFilterText: { color: "#059669" },
+  scrollView: { flex: 1 },
   activityCard: {
     backgroundColor: "#ffffff",
     borderRadius: 12,
@@ -204,117 +185,24 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  activityHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  activityInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  activityDetails: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  activityType: {
-    fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-    textTransform: "capitalize",
-  },
-  activityDate: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-    marginTop: 2,
-  },
-  durationBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f1f5f9",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  durationText: {
-    fontSize: 12,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
-  },
-  intensityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  intensityLabel: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-    marginRight: 8,
-  },
-  intensityValue: {
-    fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    textTransform: "capitalize",
-  },
-  highIntensity: {
-    backgroundColor: "#fef2f2",
-    color: "#dc2626",
-  },
-  moderateIntensity: {
-    backgroundColor: "#fffbeb",
-    color: "#d97706",
-  },
-  lowIntensity: {
-    backgroundColor: "#f0fdf4",
-    color: "#16a34a",
-  },
-  caloriesText: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-    marginBottom: 8,
-  },
-  notesText: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#475569",
-    fontStyle: "italic",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 48,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-    marginTop: 16,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 48,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-    textAlign: "center",
-  },
+  activityHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  activityInfo: { flexDirection: "row", alignItems: "center", flex: 1 },
+  activityDetails: { marginLeft: 12, flex: 1 },
+  activityType: { fontSize: 16, fontFamily: "Montserrat-SemiBold", color: "#1e293b", textTransform: "capitalize" },
+  activityDate: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#64748b", marginTop: 2 },
+  durationBadge: { flexDirection: "row", alignItems: "center", backgroundColor: "#f1f5f9", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4 },
+  durationText: { fontSize: 12, fontFamily: "OpenSans-SemiBold", color: "#64748b" },
+  intensityContainer: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  intensityLabel: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#64748b", marginRight: 8 },
+  intensityValue: { fontSize: 14, fontFamily: "OpenSans-SemiBold", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, textTransform: "capitalize" },
+  highIntensity: { backgroundColor: "#fef2f2", color: "#dc2626" },
+  moderateIntensity: { backgroundColor: "#fffbeb", color: "#d97706" },
+  lowIntensity: { backgroundColor: "#f0fdf4", color: "#16a34a" },
+  caloriesText: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#64748b", marginBottom: 8 },
+  notesText: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#475569", fontStyle: "italic" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 48 },
+  loadingText: { fontSize: 16, fontFamily: "OpenSans-Regular", color: "#64748b", marginTop: 16 },
+  emptyState: { alignItems: "center", paddingVertical: 48 },
+  emptyTitle: { fontSize: 18, fontFamily: "Montserrat-SemiBold", color: "#1e293b", marginTop: 16, marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#64748b", textAlign: "center" },
 })
