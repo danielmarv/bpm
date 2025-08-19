@@ -15,23 +15,24 @@ export function ActivityHistory() {
   const loadActivities = async (showRefresh = false) => {
     try {
       showRefresh ? setRefreshing(true) : setLoading(true)
-      let data: Activity[] = []
 
+      let response
       switch (filter) {
         case "exercise":
-          data = await activitiesApi.getExerciseActivities()
+          response = await activitiesApi.getExerciseActivities()
           break
         case "diet":
-          data = await activitiesApi.getDietActivities()
+          response = await activitiesApi.getDietActivities()
           break
         case "weight":
-          data = await activitiesApi.getWeightActivities()
+          response = await activitiesApi.getWeightActivities()
           break
         default:
-          data = await activitiesApi.getActivities()
+          response = await activitiesApi.getActivities()
       }
 
-      setActivities(data || [])
+      const activitiesArray = response?.activities || []
+      setActivities(Array.isArray(activitiesArray) ? activitiesArray : [])
     } catch (error) {
       console.error("Failed to load activities:", error)
       setActivities([])
@@ -69,7 +70,7 @@ export function ActivityHistory() {
   }
 
   const renderActivity = (activity: Activity) => (
-    <View key={activity.id} style={styles.activityCard}>
+    <View key={activity._id} style={styles.activityCard}>
       <View style={styles.activityHeader}>
         <View style={styles.activityInfo}>
           {getActivityIcon(activity.type)}

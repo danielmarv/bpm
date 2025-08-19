@@ -13,7 +13,7 @@ const storage = {
 }
 
 interface Activity {
-  id?: string
+  _id?: string
   type: "exercise" | "diet" | "weight" | "stress_reduction"
   date: string
   data: Record<string, any>
