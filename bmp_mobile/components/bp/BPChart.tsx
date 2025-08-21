@@ -16,8 +16,8 @@ export function BPChart() {
   const loadReadings = async () => {
     try {
       setLoading(true)
-      const recentReadings = await bloodPressureApi.getRecentReadings(10)
-      setReadings(recentReadings)
+      const response = await bloodPressureApi.getReadings({ limit: 10, page: 1 })
+      setReadings(response.readings)
     } catch (error) {
       console.error("Error loading BP readings:", error)
       setReadings([])
@@ -48,9 +48,10 @@ export function BPChart() {
       <View style={styles.chartContainer}>
         <View style={styles.chart}>
           {readings.map((reading, index) => {
-            const systolicHeight = ((reading.systolic - minSystolic) / (maxSystolic - minSystolic)) * chartHeight * 0.8
+            const systolicHeight =
+              ((reading.systolic - minSystolic) / (maxSystolic - minSystolic || 1)) * chartHeight * 0.8
             const diastolicHeight =
-              ((reading.diastolic - minDiastolic) / (maxDiastolic - minDiastolic)) * chartHeight * 0.8
+              ((reading.diastolic - minDiastolic) / (maxDiastolic - minDiastolic || 1)) * chartHeight * 0.8
 
             return (
               <View key={reading.id || index} style={styles.barGroup}>
@@ -89,10 +90,7 @@ export function BPChart() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Blood Pressure Trends</Text>
-        {/* <TouchableOpacity style={styles.toggleButton} onPress={() => setViewMode(viewMode === "3d" ? "2d" : "3d")}>
-          {viewMode === "3d" ? <BarChart3 size={20} color="#059669" /> : <TrendingUp size={20} color="#059669" />}
-          <Text style={styles.toggleText}>{viewMode === "3d" ? "2D View" : "3D View"}</Text>
-        </TouchableOpacity> */}
+        {/* Optional toggle button for viewMode */}
       </View>
 
       {renderSimpleChart()}
@@ -132,20 +130,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "Montserrat-SemiBold",
     color: "#1e293b",
-  },
-  toggleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ecfdf5",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  toggleText: {
-    fontSize: 12,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#059669",
   },
   chartContainer: {
     marginBottom: 16,

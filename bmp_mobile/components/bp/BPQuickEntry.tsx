@@ -4,7 +4,7 @@ import { useState } from "react"
 import { View, Text, TextInput, StyleSheet, Alert } from "react-native"
 import { PrimaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
-import { bloodPressureApi } from "../../services/bloodPressureApi"
+import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
 
 interface BPQuickEntryProps {
   onEntryComplete: () => void
@@ -22,9 +22,9 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
       return
     }
 
-    const systolicNum = Number.parseInt(systolic)
-    const diastolicNum = Number.parseInt(diastolic)
-    const pulseNum = pulse ? Number.parseInt(pulse) : undefined
+    const systolicNum = parseInt(systolic, 10)
+    const diastolicNum = parseInt(diastolic, 10)
+    const pulseNum = pulse ? parseInt(pulse, 10) : undefined
 
     if (systolicNum < 70 || systolicNum > 250 || diastolicNum < 40 || diastolicNum > 150) {
       Alert.alert("Error", "Please enter valid blood pressure values")
@@ -33,12 +33,14 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
 
     try {
       setLoading(true)
-      await bloodPressureApi.createReading({
+      const newReading: Omit<BloodPressureReading, "id" | "userId" | "createdAt" | "updatedAt"> = {
         systolic: systolicNum,
         diastolic: diastolicNum,
         pulse: pulseNum,
         timestamp: new Date().toISOString(),
-      })
+      }
+
+      await bloodPressureApi.createReading(newReading)
 
       setSystolic("")
       setDiastolic("")
@@ -99,11 +101,7 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
       </View>
 
       <View style={styles.buttonContainer}>
-        {loading ? (
-          <LoadingSpinner size="large" color="#059669" />
-        ) : (
-          <PrimaryButton title="Save Reading" onPress={handleSubmit} />
-        )}
+        {loading ? <LoadingSpinner size="large" color="#059669" /> : <PrimaryButton title="Save Reading" onPress={handleSubmit} />}
       </View>
     </View>
   )

@@ -55,93 +55,120 @@ class BloodPressureApi {
     }
   }
 
+  // Create a new reading
   async createReading(
     reading: Omit<BloodPressureReading, "id" | "userId" | "createdAt" | "updatedAt">,
   ): Promise<BloodPressureReading> {
-    try {
-      const headers = await this.getAuthHeaders()
+    const headers = await this.getAuthHeaders()
+    const response = await fetch(`${API_URL}/blood-pressure`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(reading),
+    })
 
-      const response = await fetch(`${API_URL}/blood-pressure`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(reading),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
-
-      const responseData: ApiResponse<BloodPressureReading> = await response.json()
-      return responseData.data
-    } catch (error) {
-      console.error("Error creating blood pressure reading:", error)
-      throw error
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
     }
+
+    const responseData: ApiResponse<BloodPressureReading> = await response.json()
+    return responseData.data
   }
 
+  // Get readings with filters and pagination
   async getReadings(filters?: BloodPressureFilters): Promise<PaginatedResponse<BloodPressureReading>> {
-    try {
-      const headers = await this.getAuthHeaders()
+    const headers = await this.getAuthHeaders()
+    const queryParams = new URLSearchParams()
+    if (filters?.startDate) queryParams.append("startDate", filters.startDate)
+    if (filters?.endDate) queryParams.append("endDate", filters.endDate)
+    if (filters?.limit) queryParams.append("limit", filters.limit.toString())
+    if (filters?.page) queryParams.append("page", filters.page.toString())
 
-      // Build query parameters
-      const queryParams = new URLSearchParams()
-      if (filters?.startDate) {
-        queryParams.append("startDate", filters.startDate)
-      }
-      if (filters?.endDate) {
-        queryParams.append("endDate", filters.endDate)
-      }
-      if (filters?.limit) {
-        queryParams.append("limit", filters.limit.toString())
-      }
-      if (filters?.page) {
-        queryParams.append("page", filters.page.toString())
-      }
+    const url = `${API_URL}/blood-pressure${queryParams.toString() ? `?${queryParams}` : ""}`
+    const response = await fetch(url, { method: "GET", headers })
 
-      const queryString = queryParams.toString()
-      const url = `${API_URL}/blood-pressure${queryString ? `?${queryString}` : ""}`
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
-
-      const responseData: ApiResponse<PaginatedResponse<BloodPressureReading>> = await response.json()
-      return responseData.data
-    } catch (error) {
-      console.error("Error fetching blood pressure readings:", error)
-      throw error
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
     }
+
+    const responseData: ApiResponse<PaginatedResponse<BloodPressureReading>> = await response.json()
+    return responseData.data
   }
 
-  // Convenience methods for common queries
-  async getRecentReadings(limit = 10): Promise<BloodPressureReading[]> {
-    const response = await this.getReadings({ limit, page: 1 })
-    return response.readings
+  // Get abnormal readings
+  async getAbnormalReadings(limit = 10, page = 1): Promise<PaginatedResponse<BloodPressureReading>> {
+    const headers = await this.getAuthHeaders()
+    const queryParams = new URLSearchParams()
+    queryParams.append("limit", limit.toString())
+    queryParams.append("page", page.toString())
+
+    const response = await fetch(`${API_URL}/blood-pressure/abnormal?${queryParams}`, { method: "GET", headers })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+    }
+
+    const responseData: ApiResponse<PaginatedResponse<BloodPressureReading>> = await response.json()
+    return responseData.data
   }
 
-  async getReadingsInDateRange(startDate: string, endDate: string): Promise<BloodPressureReading[]> {
-    const response = await this.getReadings({ startDate, endDate })
-    return response.readings
+  // Get blood pressure statistics
+  async getReadingStats(startDate?: string, endDate?: string): Promise<any> {
+    const headers = await this.getAuthHeaders()
+    const queryParams = new URLSearchParams()
+    if (startDate) queryParams.append("startDate", startDate)
+    if (endDate) queryParams.append("endDate", endDate)
+
+    const response = await fetch(`${API_URL}/blood-pressure/stats${queryParams.toString() ? `?${queryParams}` : ""}`, { method: "GET", headers })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+    }
+
+    const responseData: ApiResponse<any> = await response.json()
+    return responseData.data
   }
 
-  async getTodaysReadings(): Promise<BloodPressureReading[]> {
-    const today = new Date()
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString()
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString()
+  // Get a single reading by ID
+  async getReadingById(id: string): Promise<BloodPressureReading> {
+    const headers = await this.getAuthHeaders()
+    const response = await fetch(`${API_URL}/blood-pressure/${id}`, { method: "GET", headers })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+    }
+    const responseData: ApiResponse<BloodPressureReading> = await response.json()
+    return responseData.data
+  }
 
-    return this.getReadingsInDateRange(startOfDay, endOfDay)
+  // Update a reading by ID
+  async updateReading(id: string, reading: Omit<BloodPressureReading, "id" | "userId" | "createdAt" | "updatedAt">): Promise<BloodPressureReading> {
+    const headers = await this.getAuthHeaders()
+    const response = await fetch(`${API_URL}/blood-pressure/${id}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(reading),
+    })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+    }
+    const responseData: ApiResponse<BloodPressureReading> = await response.json()
+    return responseData.data
+  }
+
+  // Delete a reading by ID
+  async deleteReading(id: string): Promise<void> {
+    const headers = await this.getAuthHeaders()
+    const response = await fetch(`${API_URL}/blood-pressure/${id}`, { method: "DELETE", headers })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+    }
   }
 }
 
-// Export a singleton instance
+// Export singleton instance
 export const bloodPressureApi = new BloodPressureApi()
-
-// Export types for use in components
 export type { BloodPressureReading, BloodPressureFilters, ApiResponse, PaginatedResponse }

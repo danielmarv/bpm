@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from "reac
 import { PrimaryButton, SecondaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
 import { ArrowLeft, Clock, Zap } from "../ui/Icons"
-import { activitiesApi } from "../../services/activitiesApi"
+import { activitiesApi, Activity } from "../../services/activitiesApi"
 
 interface ExerciseTrackerProps {
   onBack: () => void
@@ -43,16 +43,19 @@ export function ExerciseTracker({ onBack }: ExerciseTrackerProps) {
     try {
       setLoading(true)
 
-      // Prepare activity data
-      const activityData = {
-        type: formData.activity.toLowerCase().replace(/\s+/g, "_"),
-        duration: Number.parseInt(formData.duration),
-        intensity: formData.intensity,
-        ...(formData.calories && { calories: Number.parseInt(formData.calories) }),
-        ...(formData.notes && { notes: formData.notes }),
+      // Prepare activity data for API
+      const activityPayload: Omit<Activity, "id" | "userId" | "createdAt" | "updatedAt"> = {
+        type: formData.activity.toLowerCase().replace(/\s+/g, "_") as Activity["type"],
+        date: new Date().toISOString(),
+        data: {
+          duration: Number.parseInt(formData.duration),
+          intensity: formData.intensity,
+          ...(formData.calories && { calories: Number.parseInt(formData.calories) }),
+          ...(formData.notes && { notes: formData.notes }),
+        },
       }
 
-      await activitiesApi.logActivity( activityData)
+      await activitiesApi.logActivity(activityPayload)
 
       Alert.alert("Success", "Exercise logged successfully", [
         {

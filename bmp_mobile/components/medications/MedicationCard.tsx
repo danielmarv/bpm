@@ -1,15 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
-import { Clock, CheckCircle, Edit3 } from "../ui/Icons"
-
-interface Medication {
-  id: string
-  name: string
-  dosage: string
-  frequency: string
-  nextDose: string
-  adherenceRate: number
-  isActive: boolean
-}
+import { Edit3, CheckCircle } from "../ui/Icons"
+import { type Medication } from "../../services/medicationsApi"
 
 interface MedicationCardProps {
   medication: Medication
@@ -18,67 +9,60 @@ interface MedicationCardProps {
 }
 
 export function MedicationCard({ medication, onLogDose, onEdit }: MedicationCardProps) {
-  const getAdherenceColor = (rate: number) => {
-    if (rate >= 90) return "#059669"
-    if (rate >= 75) return "#d97706"
-    return "#dc2626"
-  }
-
   return (
-    <View style={[styles.container, !medication.isActive && styles.inactiveContainer]}>
+    <View style={[styles.container, !medication.active && styles.inactiveContainer]}>
       <View style={styles.header}>
         <View style={styles.medicationInfo}>
-          <Text style={[styles.medicationName, !medication.isActive && styles.inactiveText]}>{medication.name}</Text>
-          <Text style={styles.dosageInfo}>
-            {medication.dosage} • {medication.frequency}
+          <Text style={[styles.medicationName, !medication.active && styles.inactiveText]}>
+            {medication.name}
           </Text>
+          <Text style={styles.dosageInfo}>
+            {medication.dosage.amount} {medication.dosage.unit} • {formatFrequency(medication.frequency)}
+          </Text>
+          <Text style={styles.startDate}>Started: {new Date(medication.startDate).toLocaleDateString()}</Text>
+          {medication.reminderSchedule?.enabled && (
+            <Text style={styles.reminderTimes}>
+              Reminders: {medication.reminderSchedule.times.join(", ")}
+            </Text>
+          )}
         </View>
         <TouchableOpacity onPress={onEdit} style={styles.editButton}>
           <Edit3 size={16} color="#64748b" />
         </TouchableOpacity>
       </View>
 
-      {medication.isActive && (
-        <>
-          <View style={styles.nextDoseContainer}>
-            <Clock size={16} color="#7c3aed" />
-            <Text style={styles.nextDoseText}>Next dose: {medication.nextDose}</Text>
-          </View>
-
-          <View style={styles.adherenceContainer}>
-            <View style={styles.adherenceInfo}>
-              <Text style={styles.adherenceLabel}>Adherence Rate</Text>
-              <Text style={[styles.adherenceRate, { color: getAdherenceColor(medication.adherenceRate) }]}>
-                {medication.adherenceRate}%
-              </Text>
-            </View>
-            <View style={styles.adherenceBar}>
-              <View
-                style={[
-                  styles.adherenceProgress,
-                  {
-                    width: `${medication.adherenceRate}%`,
-                    backgroundColor: getAdherenceColor(medication.adherenceRate),
-                  },
-                ]}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.logButton} onPress={onLogDose} activeOpacity={0.8}>
-            <CheckCircle size={20} color="#ffffff" />
-            <Text style={styles.logButtonText}>Log Dose</Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      {!medication.isActive && (
+      {medication.active ? (
+        <TouchableOpacity style={styles.logButton} onPress={onLogDose} activeOpacity={0.8}>
+          <CheckCircle size={20} color="#ffffff" />
+          <Text style={styles.logButtonText}>Log Dose</Text>
+        </TouchableOpacity>
+      ) : (
         <View style={styles.inactiveLabel}>
           <Text style={styles.inactiveLabelText}>Inactive</Text>
         </View>
       )}
     </View>
   )
+}
+
+// Helper to format frequency nicely
+function formatFrequency(frequency: Medication["frequency"]) {
+  switch (frequency) {
+    case "once_daily":
+      return "Once Daily"
+    case "twice_daily":
+      return "Twice Daily"
+    case "three_times_daily":
+      return "Three Times Daily"
+    case "four_times_daily":
+      return "Four Times Daily"
+    case "as_needed":
+      return "As Needed"
+    case "custom":
+      return "Custom"
+    default:
+      return frequency
+  }
 }
 
 const styles = StyleSheet.create({
@@ -119,6 +103,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "OpenSans-Regular",
     color: "#64748b",
+    marginBottom: 4,
+  },
+  startDate: {
+    fontSize: 12,
+    fontFamily: "OpenSans-Regular",
+    color: "#94a3b8",
+  },
+  reminderTimes: {
+    fontSize: 12,
+    fontFamily: "OpenSans-Regular",
+    color: "#059669",
+    marginTop: 4,
   },
   editButton: {
     width: 32,
@@ -127,45 +123,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f1f5f9",
     justifyContent: "center",
     alignItems: "center",
-  },
-  nextDoseContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    gap: 8,
-  },
-  nextDoseText: {
-    fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#7c3aed",
-  },
-  adherenceContainer: {
-    marginBottom: 20,
-  },
-  adherenceInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  adherenceLabel: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-  },
-  adherenceRate: {
-    fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
-  },
-  adherenceBar: {
-    height: 6,
-    backgroundColor: "#e2e8f0",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  adherenceProgress: {
-    height: "100%",
-    borderRadius: 3,
   },
   logButton: {
     flexDirection: "row",

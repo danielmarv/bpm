@@ -1,17 +1,66 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { View, Text, StyleSheet } from "react-native"
 import { TrendUp, TrendDown, Minus } from "../ui/Icons"
+import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
 
 interface BPStats {
-  latest: { systolic: number; diastolic: number; pulse: number; timestamp: string }
+  latest: BloodPressureReading
   average: { systolic: number; diastolic: number }
   trend: "improving" | "stable" | "concerning"
 }
 
 interface BPStatsCardProps {
-  stats: BPStats
+  userId?: string // optional if you want to fetch stats for a specific user
 }
 
-export function BPStatsCard({ stats }: BPStatsCardProps) {
+export function BPStatsCard({ userId }: BPStatsCardProps) {
+  const [stats, setStats] = useState<BPStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadStats()
+  }, [])
+
+  const loadStats = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch the last 10 readings
+      const readingsResponse = await bloodPressureApi.getReadings({ limit: 10, page: 1 })
+      const readings = readingsResponse.readings
+
+      // Fetch stats (average, etc.) for the last 30 days
+      const statsData = await bloodPressureApi.getReadingStats(
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        new Date().toISOString(),
+      )
+
+      // Determine trend based on last 2 readings
+      let trend: "improving" | "stable" | "concerning" = "stable"
+      if (readings.length >= 2) {
+        const last = readings[readings.length - 1]
+        const prev = readings[readings.length - 2]
+        if (last.systolic < prev.systolic && last.diastolic < prev.diastolic) trend = "improving"
+        else if (last.systolic > prev.systolic || last.diastolic > prev.diastolic) trend = "concerning"
+      }
+
+      setStats({
+        latest: readings[readings.length - 1],
+        average: {
+          systolic: statsData?.averageSystolic || 0,
+          diastolic: statsData?.averageDiastolic || 0,
+        },
+        trend,
+      })
+    } catch (error) {
+      console.error("Error loading BP stats:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getBPCategory = (systolic: number, diastolic: number) => {
     if (systolic < 120 && diastolic < 80) return { category: "Normal", color: "#059669" }
     if (systolic < 130 && diastolic < 80) return { category: "Elevated", color: "#d97706" }
@@ -20,7 +69,7 @@ export function BPStatsCard({ stats }: BPStatsCardProps) {
   }
 
   const getTrendIcon = () => {
-    switch (stats.trend) {
+    switch (stats?.trend) {
       case "improving":
         return <TrendUp size={20} color="#059669" />
       case "concerning":
@@ -28,6 +77,14 @@ export function BPStatsCard({ stats }: BPStatsCardProps) {
       default:
         return <Minus size={20} color="#64748b" />
     }
+  }
+
+  if (!stats) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Loading stats...</Text>
+      </View>
+    )
   }
 
   const { category, color } = getBPCategory(stats.latest.systolic, stats.latest.diastolic)
@@ -41,7 +98,14 @@ export function BPStatsCard({ stats }: BPStatsCardProps) {
           <Text
             style={[
               styles.trendText,
-              { color: stats.trend === "improving" ? "#059669" : stats.trend === "concerning" ? "#dc2626" : "#64748b" },
+              {
+                color:
+                  stats.trend === "improving"
+                    ? "#059669"
+                    : stats.trend === "concerning"
+                    ? "#dc2626"
+                    : "#64748b",
+              },
             ]}
           >
             {stats.trend}
@@ -87,6 +151,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+    marginBottom: 16,
   },
   header: {
     flexDirection: "row",

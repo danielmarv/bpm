@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from "react-native"
 import { MedicationCard } from "./MedicationCard"
 import { PrimaryButton } from "../ui/Button"
 import { Plus } from "../ui/Icons"
@@ -22,7 +22,7 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
   const loadMedications = async () => {
     try {
       setLoading(true)
-      const data = await medicationsApi.getAllMedications()
+      const data = await medicationsApi.getMedications()
       setMedications(data)
     } catch (error) {
       console.error("Error loading medications:", error)
@@ -32,9 +32,16 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
     }
   }
 
-  const handleLogDose = (medicationId: string) => {
-    Alert.alert("Dose Logged", "Your medication dose has been recorded successfully.")
-    // Update medication state or refresh from API
+  const handleLogDose = async (medicationId: string) => {
+    try {
+      // Here you could open a modal or directly log a dose
+      await medicationsApi.markAsTaken(medicationId)
+      Alert.alert("Dose Logged", "Your medication dose has been recorded successfully.")
+      loadMedications() // refresh list if needed
+    } catch (error) {
+      console.error("Error logging dose:", error)
+      Alert.alert("Error", "Failed to log dose. Please try again.")
+    }
   }
 
   const handleEditMedication = (medicationId: string) => {
@@ -62,11 +69,11 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
     )
   }
 
-  const activeMedications = medications.filter((med) => med.isActive !== false)
-  const inactiveMedications = medications.filter((med) => med.isActive === false)
+  const activeMedications = medications.filter((med) => med.active)
+  const inactiveMedications = medications.filter((med) => !med.active)
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
       {/* Active Medications */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -78,10 +85,10 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
 
         {activeMedications.map((medication) => (
           <MedicationCard
-            key={medication.id}
+            key={medication._id}
             medication={medication}
-            onLogDose={() => handleLogDose(medication.id)}
-            onEdit={() => handleEditMedication(medication.id)}
+            onLogDose={() => handleLogDose(medication._id!)}
+            onEdit={() => handleEditMedication(medication._id!)}
           />
         ))}
       </View>
@@ -92,21 +99,23 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
           <Text style={styles.sectionTitle}>Inactive Medications ({inactiveMedications.length})</Text>
           {inactiveMedications.map((medication) => (
             <MedicationCard
-              key={medication.id}
+              key={medication._id}
               medication={medication}
-              onLogDose={() => handleLogDose(medication.id)}
-              onEdit={() => handleEditMedication(medication.id)}
+              onLogDose={() => handleLogDose(medication._id!)}
+              onEdit={() => handleEditMedication(medication._id!)}
             />
           ))}
         </View>
       )}
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   loadingContainer: {
     flex: 1,

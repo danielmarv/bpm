@@ -15,9 +15,18 @@ const router = express.Router()
 // Validation rules
 const messageValidation = [
   body("receiverId").isMongoId().withMessage("Valid receiver ID required"),
-  body("subject").trim().isLength({ min: 1, max: 200 }).withMessage("Subject required (max 200 characters)"),
-  body("body").trim().isLength({ min: 1, max: 2000 }).withMessage("Message body required (max 2000 characters)"),
-  body("priority").optional().isIn(["low", "normal", "high", "urgent"]).withMessage("Invalid priority level"),
+  body("subject")
+    .trim()
+    .isLength({ min: 1, max: 200 })
+    .withMessage("Subject required (max 200 characters)"),
+  body("body")
+    .trim()
+    .isLength({ min: 1, max: 2000 })
+    .withMessage("Message body required (max 2000 characters)"),
+  body("priority")
+    .optional()
+    .isIn(["low", "normal", "high", "urgent"])
+    .withMessage("Invalid priority level"),
 ]
 
 /**
@@ -79,15 +88,105 @@ router.post("/", authenticate, messageValidation, sendMessage)
  *         schema:
  *           type: boolean
  *         description: Filter unread messages
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Number of messages per page
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
  *     responses:
  *       200:
  *         description: Messages retrieved successfully
  */
 router.get("/", authenticate, getMessages)
 
+/**
+ * @swagger
+ * /api/messages/conversations:
+ *   get:
+ *     summary: Get user conversations
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Conversations retrieved successfully
+ */
 router.get("/conversations", authenticate, getConversations)
+
+/**
+ * @swagger
+ * /api/messages/{id}:
+ *   get:
+ *     summary: Get a single message by ID
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Message ID
+ *     responses:
+ *       200:
+ *         description: Message retrieved successfully
+ *       404:
+ *         description: Message not found
+ */
 router.get("/:id", authenticate, param("id").isMongoId(), getMessage)
+
+/**
+ * @swagger
+ * /api/messages/{id}/read:
+ *   put:
+ *     summary: Mark a message as read
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Message ID
+ *     responses:
+ *       200:
+ *         description: Message marked as read
+ *       404:
+ *         description: Message not found
+ */
 router.put("/:id/read", authenticate, param("id").isMongoId(), markAsRead)
+
+/**
+ * @swagger
+ * /api/messages/{id}:
+ *   delete:
+ *     summary: Delete a message
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Message ID
+ *     responses:
+ *       200:
+ *         description: Message deleted successfully
+ *       404:
+ *         description: Message not found
+ */
 router.delete("/:id", authenticate, param("id").isMongoId(), deleteMessage)
 
 export default router

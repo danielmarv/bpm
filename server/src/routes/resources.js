@@ -1,5 +1,5 @@
 import express from "express"
-import { body, param } from "express-validator"
+import { body, param, query } from "express-validator"
 import { authenticate, authorize, optionalAuth } from "../middleware/auth.js"
 import {
   createResource,
@@ -77,15 +77,98 @@ router.post("/", authenticate, authorize("admin", "provider"), resourceValidatio
  *         name: search
  *         schema:
  *           type: string
- *         description: Search in title and content
+ *         description: Search in title, content, and tags
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
  *     responses:
  *       200:
  *         description: Resources retrieved successfully
  */
 router.get("/", optionalAuth, getResources)
 
+/**
+ * @swagger
+ * /api/resources/categories:
+ *   get:
+ *     summary: Get list of resource categories
+ *     tags: [Resources]
+ *     responses:
+ *       200:
+ *         description: Categories retrieved successfully
+ */
 router.get("/categories", getResourceCategories)
+
+/**
+ * @swagger
+ * /api/resources/{id}:
+ *   get:
+ *     summary: Get a single resource by ID
+ *     tags: [Resources]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     responses:
+ *       200:
+ *         description: Resource retrieved successfully
+ *       404:
+ *         description: Resource not found
+ */
 router.get("/:id", optionalAuth, param("id").isMongoId(), getResource)
+
+/**
+ * @swagger
+ * /api/resources/{id}:
+ *   put:
+ *     summary: Update a resource (Admin/Provider only)
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 maxLength: 200
+ *               content:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *                 enum: [hypertension, diet, exercise, medication, lifestyle, general]
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Resource updated successfully
+ *       403:
+ *         description: Insufficient permissions
+ *       404:
+ *         description: Resource not found
+ */
 router.put(
   "/:id",
   authenticate,
@@ -94,6 +177,30 @@ router.put(
   resourceValidation,
   updateResource,
 )
+
+/**
+ * @swagger
+ * /api/resources/{id}:
+ *   delete:
+ *     summary: Delete a resource (Admin/Provider only)
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     responses:
+ *       200:
+ *         description: Resource deleted successfully
+ *       403:
+ *         description: Insufficient permissions
+ *       404:
+ *         description: Resource not found
+ */
 router.delete("/:id", authenticate, authorize("admin", "provider"), param("id").isMongoId(), deleteResource)
 
 export default router
