@@ -1,8 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native"
+import { useState, useEffect, useRef } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from "react-native"
 import { ArrowLeft, Send, Clock, AlertCircle } from "../ui/Icons"
+import { messagesApi, Message as ApiMessage } from "../../services/messagesApi"
+import { useAuth } from "../../contexts/AuthContext"
 
 interface Message {
   id: string
@@ -12,18 +22,20 @@ interface Message {
   content: string
   timestamp: string
   priority: "urgent" | "high" | "normal" | "low"
+  isRead?: boolean
 }
 
 interface MessageThreadProps {
   threadId: string | null
   onBack: () => void
-  onReply: () => void
 }
 
-export function MessageThread({ threadId, onBack, onReply }: MessageThreadProps) {
+export function MessageThread({ threadId, onBack }: MessageThreadProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [replyText, setReplyText] = useState("")
   const [loading, setLoading] = useState(true)
+  const scrollRef = useRef<ScrollView>(null)
+  const { user } = useAuth() // current logged-in user
 
   useEffect(() => {
     if (threadId) {
@@ -32,75 +44,77 @@ export function MessageThread({ threadId, onBack, onReply }: MessageThreadProps)
   }, [threadId])
 
   const loadMessages = async () => {
+    if (!threadId) return
     try {
       setLoading(true)
-      // Mock data - replace with actual API call
-      const mockMessages: Message[] = [
+      const messageData: ApiMessage = await messagesApi.getMessageById(threadId)
+
+      // Map API message to frontend format
+      const mappedMessages: Message[] = [
         {
-          id: "1",
-          senderId: "provider1",
-          senderName: "Dr. Sarah Johnson",
-          senderRole: "provider",
-          content:
-            "Hello! I've reviewed your recent blood pressure readings. Overall, they look good, but I noticed a few elevated readings last week. How have you been feeling?",
-          timestamp: "2024-01-15T09:00:00Z",
-          priority: "normal",
-        },
-        {
-          id: "2",
-          senderId: "patient1",
-          senderName: "You",
-          senderRole: "patient",
-          content:
-            "Hi Dr. Johnson, I've been feeling mostly fine. I did have a stressful week at work which might explain the higher readings. I've been taking my medication as prescribed.",
-          timestamp: "2024-01-15T14:30:00Z",
-          priority: "normal",
-        },
-        {
-          id: "3",
-          senderId: "provider1",
-          senderName: "Dr. Sarah Johnson",
-          senderRole: "provider",
-          content:
-            "That makes sense. Stress can definitely impact blood pressure. Let's continue monitoring. Please make sure to take readings at the same time each day if possible.",
-          timestamp: "2024-01-15T16:45:00Z",
-          priority: "normal",
+          id: messageData._id!,
+          senderId: messageData.senderId || "",
+          senderName: messageData.senderId === user?._id ? "You" : "Provider",
+          senderRole: messageData.senderId === user?._id ? "patient" : "provider",
+          content: messageData.body,
+          timestamp: messageData.createdAt || new Date().toISOString(),
+          priority: messageData.priority || "normal",
+          isRead: messageData.isRead,
         },
       ]
-      setMessages(mockMessages)
+
+      setMessages(mappedMessages)
     } catch (error) {
+      console.error("Failed to load thread messages:", error)
       Alert.alert("Error", "Failed to load messages")
     } finally {
       setLoading(false)
+      scrollRef.current?.scrollToEnd({ animated: true })
     }
   }
 
   const handleSendReply = async () => {
-    if (!replyText.trim()) return
+    if (!replyText.trim() || !threadId) return
 
     try {
-      // Mock sending reply - replace with actual API call
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: "patient1",
+      // Assuming the receiver is the opposite user in the thread
+      const receiverId =
+        messages.find((m) => m.senderId !== user?._id)?.senderId || ""
+
+      const newMsg = await messagesApi.sendMessage({
+        receiverId,
+        subject: "Re: Thread", // optional, adapt if threads have subjects
+        body: replyText.trim(),
+        priority: "normal",
+      })
+
+      const mappedMessage: Message = {
+        id: newMsg._id!,
+        senderId: user?._id!,
         senderName: "You",
         senderRole: "patient",
-        content: replyText.trim(),
-        timestamp: new Date().toISOString(),
-        priority: "normal",
+        content: newMsg.body,
+        timestamp: newMsg.createdAt!,
+        priority: newMsg.priority,
+        isRead: true,
       }
 
-      setMessages((prev) => [...prev, newMessage])
+      setMessages((prev) => [...prev, mappedMessage])
       setReplyText("")
-      Alert.alert("Success", "Reply sent successfully")
+      scrollRef.current?.scrollToEnd({ animated: true })
     } catch (error) {
+      console.error("Failed to send reply:", error)
       Alert.alert("Error", "Failed to send reply")
     }
   }
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp)
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    return (
+      date.toLocaleDateString() +
+      " " +
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    )
   }
 
   const getPriorityColor = (priority: string) => {
@@ -138,34 +152,46 @@ export function MessageThread({ threadId, onBack, onReply }: MessageThreadProps)
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <ArrowLeft size={24} color="#2563eb" />
         </TouchableOpacity>
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Conversation</Text>
-          <Text style={styles.headerSubtitle}>{messages.length} messages</Text>
-        </View>
+        <Text style={styles.headerTitle}>Conversation</Text>
       </View>
 
       {/* Messages */}
-      <ScrollView style={styles.messagesContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.messagesContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {messages.map((message) => (
           <View
             key={message.id}
             style={[
               styles.messageCard,
-              message.senderRole === "patient" ? styles.patientMessage : styles.providerMessage,
+              message.senderRole === "patient"
+                ? styles.patientMessage
+                : styles.providerMessage,
             ]}
           >
             {/* Message Header */}
             <View style={styles.messageHeader}>
               <View style={styles.senderInfo}>
                 <Text style={styles.senderName}>{message.senderName}</Text>
-                <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(message.priority) }]}>
-                  {message.priority === "urgent" && <AlertCircle size={12} color="#ffffff" />}
+                <View
+                  style={[
+                    styles.priorityBadge,
+                    { backgroundColor: getPriorityColor(message.priority) },
+                  ]}
+                >
+                  {message.priority === "urgent" && (
+                    <AlertCircle size={12} color="#ffffff" />
+                  )}
                   <Text style={styles.priorityText}>{message.priority}</Text>
                 </View>
               </View>
               <View style={styles.timestampContainer}>
                 <Clock size={14} color="#64748b" />
-                <Text style={styles.timestamp}>{formatTimestamp(message.timestamp)}</Text>
+                <Text style={styles.timestamp}>
+                  {formatTimestamp(message.timestamp)}
+                </Text>
               </View>
             </View>
 
@@ -198,9 +224,7 @@ export function MessageThread({ threadId, onBack, onReply }: MessageThreadProps)
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1, paddingHorizontal: 16 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -209,28 +233,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e2e8f0",
     marginBottom: 16,
   },
-  backButton: {
-    padding: 8,
-    marginRight: 12,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-    marginBottom: 2,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-  },
-  messagesContainer: {
-    flex: 1,
-    paddingBottom: 16,
-  },
+  backButton: { padding: 8, marginRight: 12 },
+  headerTitle: { fontSize: 18, fontWeight: "600", color: "#1e293b" },
+  messagesContainer: { flex: 1 },
   messageCard: {
     backgroundColor: "#ffffff",
     borderRadius: 12,
@@ -242,63 +247,16 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  patientMessage: {
-    marginLeft: 32,
-    borderLeftWidth: 3,
-    borderLeftColor: "#10b981",
-  },
-  providerMessage: {
-    marginRight: 32,
-    borderLeftWidth: 3,
-    borderLeftColor: "#2563eb",
-  },
-  messageHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  senderInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 8,
-  },
-  senderName: {
-    fontSize: 14,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-  },
-  priorityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 2,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#ffffff",
-    textTransform: "uppercase",
-  },
-  timestampContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  timestamp: {
-    fontSize: 12,
-    fontFamily: "OpenSans-Regular",
-    color: "#64748b",
-  },
-  messageContent: {
-    fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#374151",
-    lineHeight: 20,
-  },
+  patientMessage: { marginLeft: 32, borderLeftWidth: 3, borderLeftColor: "#10b981" },
+  providerMessage: { marginRight: 32, borderLeftWidth: 3, borderLeftColor: "#2563eb" },
+  messageHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
+  senderInfo: { flexDirection: "row", alignItems: "center", gap: 8 },
+  senderName: { fontSize: 14, fontWeight: "600", color: "#1e293b" },
+  priorityBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, gap: 2 },
+  priorityText: { fontSize: 10, color: "#ffffff", textTransform: "uppercase" },
+  timestampContainer: { flexDirection: "row", alignItems: "center", gap: 4 },
+  timestamp: { fontSize: 12, color: "#64748b" },
+  messageContent: { fontSize: 14, color: "#374151", lineHeight: 20 },
   replyContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -321,19 +279,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-    fontFamily: "OpenSans-Regular",
-    color: "#374151",
     maxHeight: 100,
     textAlignVertical: "top",
   },
-  sendButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 8,
-    padding: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendButtonDisabled: {
-    backgroundColor: "#e2e8f0",
-  },
+  sendButton: { backgroundColor: "#2563eb", borderRadius: 8, padding: 12, alignItems: "center", justifyContent: "center" },
+  sendButtonDisabled: { backgroundColor: "#e2e8f0" },
 })

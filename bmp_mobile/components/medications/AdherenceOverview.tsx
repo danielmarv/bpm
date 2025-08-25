@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { Eye, EyeOff } from "../ui/Icons"
-import { medicationsApi, Medication } from "../../services/medicationsApi"
+import { medicationsApi, Medication, AdherenceRecord } from "../../services/medicationsApi"
 
 interface MedicationWithAdherence extends Medication {
   adherenceRate: number
@@ -18,14 +18,20 @@ export function AdherenceOverview() {
     async function fetchData() {
       try {
         setLoading(true)
+        // 1. Fetch active medications
         const meds = await medicationsApi.getMedications({ active: true })
 
+        // 2. Fetch adherence logs for each medication
         const medsWithAdherence: MedicationWithAdherence[] = await Promise.all(
           meds.map(async (med) => {
-            const logs = await medicationsApi.getAdherenceLogs(med._id!)
-            const total = logs.adherence.length
-            const taken = logs.adherence.filter((l) => l.taken).length
+            const logsResponse = await medicationsApi.getAdherenceLogs(med._id!)
+            // Use logs array from response
+            const logs: AdherenceRecord[] = logsResponse.adherence ?? logsResponse.logs ?? []
+
+            const total = logs.length
+            const taken = logs.filter((l) => l.taken ?? !!l.takenAt).length
             const adherenceRate = total > 0 ? Math.round((taken / total) * 100) : 0
+
             return { ...med, adherenceRate }
           }),
         )
@@ -46,15 +52,16 @@ export function AdherenceOverview() {
     : 0
 
   const getAdherenceColor = (rate: number) => {
-    if (rate >= 90) return "#059669"
-    if (rate >= 75) return "#d97706"
-    return "#dc2626"
+    if (rate >= 90) return "#059669" // green
+    if (rate >= 75) return "#d97706" // orange
+    return "#dc2626" // red
   }
 
   if (loading) return <Text style={{ textAlign: "center", marginTop: 20 }}>Loading...</Text>
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Medication Adherence</Text>
         <TouchableOpacity style={styles.toggleButton} onPress={() => setShowDetailed(!showDetailed)}>
@@ -63,12 +70,14 @@ export function AdherenceOverview() {
         </TouchableOpacity>
       </View>
 
+      {/* Overall Adherence */}
       <View style={styles.overallCard}>
         <Text style={styles.overallTitle}>Overall Adherence</Text>
         <Text style={styles.overallValue}>{averageAdherence}%</Text>
         <Text style={styles.overallSubtext}>Across {medications.length} medications</Text>
       </View>
 
+      {/* Detailed View */}
       {showDetailed ? (
         <View style={styles.circlesContainer}>
           {medications.map((med) => (
@@ -95,6 +104,7 @@ export function AdherenceOverview() {
           ))}
         </View>
       ) : (
+        // Simple Bar View
         <View style={styles.listContainer}>
           {medications.map((med) => (
             <View key={med._id} style={styles.medicationCard}>

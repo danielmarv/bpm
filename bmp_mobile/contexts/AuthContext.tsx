@@ -6,6 +6,7 @@ import * as SecureStore from "expo-secure-store"
 import Constants from "expo-constants"
 
 interface User {
+  _id: string
   id: string
   email: string
   role: "patient" | "provider"

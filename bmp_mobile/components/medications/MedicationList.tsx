@@ -32,12 +32,54 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
     }
   }
 
-  const handleLogDose = async (medicationId: string) => {
+  const handleLogDose = async (medicationId: string, medication: Medication) => {
     try {
-      // Here you could open a modal or directly log a dose
+      // 1. Fetch adherence logs
+      const logsResponse = await medicationsApi.getAdherenceLogs(medicationId)
+      const logs = logsResponse.adherence ?? logsResponse.logs ?? []
+
+      // 2. Get the last logged dose
+      const lastLog = logs.sort(
+        (a, b) => new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime()
+      )[0]
+
+      if (lastLog) {
+        const now = new Date()
+        const lastTaken = new Date(lastLog.takenAt)
+
+        let intervalExceeded = false
+
+        switch (medication.frequency) {
+          case "once_daily":
+            intervalExceeded = now.toDateString() === lastTaken.toDateString()
+            break
+          case "twice_daily":
+            intervalExceeded = now.getTime() - lastTaken.getTime() < 12 * 60 * 60 * 1000
+            break
+          case "three_times_daily":
+            intervalExceeded = now.getTime() - lastTaken.getTime() < 8 * 60 * 60 * 1000
+            break
+          case "four_times_daily":
+            intervalExceeded = now.getTime() - lastTaken.getTime() < 6 * 60 * 60 * 1000
+            break
+          case "as_needed":
+          case "custom":
+            intervalExceeded = false
+            break
+        }
+
+        if (intervalExceeded) {
+          return Alert.alert(
+            "Dose Already Logged",
+            "You have already logged a dose for this interval. Please wait until the next scheduled dose."
+          )
+        }
+      }
+
+      // 3. Log the dose
       await medicationsApi.markAsTaken(medicationId)
       Alert.alert("Dose Logged", "Your medication dose has been recorded successfully.")
-      loadMedications() // refresh list if needed
+      loadMedications() // refresh list
     } catch (error) {
       console.error("Error logging dose:", error)
       Alert.alert("Error", "Failed to log dose. Please try again.")
@@ -63,7 +105,9 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
           <Plus size={48} color="#94a3b8" />
         </View>
         <Text style={styles.emptyTitle}>No Medications Yet</Text>
-        <Text style={styles.emptyDescription}>Add your first medication to start tracking your regimen</Text>
+        <Text style={styles.emptyDescription}>
+          Add your first medication to start tracking your regimen
+        </Text>
         <PrimaryButton title="Add Medication" onPress={onAddMedication} style={styles.emptyButton} />
       </View>
     )
@@ -87,7 +131,7 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
           <MedicationCard
             key={medication._id}
             medication={medication}
-            onLogDose={() => handleLogDose(medication._id!)}
+            onLogDose={() => handleLogDose(medication._id!, medication)}
             onEdit={() => handleEditMedication(medication._id!)}
           />
         ))}
@@ -101,7 +145,7 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
             <MedicationCard
               key={medication._id}
               medication={medication}
-              onLogDose={() => handleLogDose(medication._id!)}
+              onLogDose={() => handleLogDose(medication._id!, medication)}
               onEdit={() => handleEditMedication(medication._id!)}
             />
           ))}

@@ -1,40 +1,47 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
-import { messagesApi, Message } from "../../services/messagesApi"
-import { MessageCard } from "./MessageCard"
-import { PrimaryButton } from "../ui/Button"
-import { Send } from "../ui/Icons"
+import { useState, useEffect, useCallback } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, RefreshControl } from "react-native";
+import { messagesApi, Message } from "../../services/messagesApi";
+import { MessageCard } from "./MessageCard";
+import { PrimaryButton } from "../ui/Button";
+import { Send } from "../ui/Icons";
 
 interface MessageListProps {
-  onOpenThread: (threadId: string) => void
-  onCompose: () => void
+  onOpenThread: (threadId: string) => void;
+  onCompose: () => void;
 }
 
 export function MessageList({ onOpenThread, onCompose }: MessageListProps) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(true)
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchMessages = async () => {
     try {
-      setLoading(true)
-      const inboxMessages = await messagesApi.getMessages()
-      setMessages(inboxMessages)
+      setLoading(true);
+      const inboxMessages = await messagesApi.getMessages({ type: "inbox" });
+      setMessages(inboxMessages.messages); // backend returns { messages, pagination }
     } catch (error) {
-      console.error("Failed to fetch messages:", error)
-      Alert.alert("Error", "Failed to load messages")
+      console.error("Failed to fetch messages:", error);
+      Alert.alert("Error", "Failed to load messages");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchMessages();
+    setRefreshing(false);
+  }, []);
 
   useEffect(() => {
-    fetchMessages()
-  }, [])
+    fetchMessages();
+  }, []);
 
-  const unreadCount = messages.filter((msg) => !msg.read).length
-  const threadsCount = messages.length // or count based on your conversation logic
+  const unreadCount = messages.filter((msg) => !msg.isRead).length;
+  const threadsCount = messages.length; // can replace with unique sender/receiver logic if needed
 
   if (loading) {
     return (
@@ -42,7 +49,7 @@ export function MessageList({ onOpenThread, onCompose }: MessageListProps) {
         <ActivityIndicator size="large" color="#2563eb" />
         <Text style={styles.loadingText}>Loading messages...</Text>
       </View>
-    )
+    );
   }
 
   if (messages.length === 0) {
@@ -57,11 +64,14 @@ export function MessageList({ onOpenThread, onCompose }: MessageListProps) {
         </Text>
         <PrimaryButton title="Send Message" onPress={onCompose} style={styles.emptyButton} />
       </View>
-    )
+    );
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>{messages.length}</Text>
@@ -87,34 +97,39 @@ export function MessageList({ onOpenThread, onCompose }: MessageListProps) {
       </TouchableOpacity>
 
       <View style={styles.messagesList}>
-        {messages.map((message) => (
-          <MessageCard
-            key={message._id}
-            message={{
-              id: message._id!,
-              threadId: message._id!,
-              subject: message.subject,
-              preview: message.body,
-              sender: {
-                name: message.senderId || "Unknown",
-                role: "provider",
-              },
-              timestamp: message.createdAt || new Date().toISOString(),
-              priority: message.priority,
-              isRead: message.read || false,
-              hasReplies: false,
-              replyCount: 0,
-            }}
-            onPress={() => onOpenThread(message._id!)}
-          />
-        ))}
+        {messages.map((message) => {
+          // Ensure sender name mapping is correct
+          const senderName =
+            typeof message.senderId === "string"
+              ? "Unknown"
+              : `${message.senderId?.profile?.firstName || ""} ${message.senderId?.profile?.lastName || ""}`.trim() || "Unknown";
+
+          return (
+            <MessageCard
+              key={message._id}
+              message={{
+                id: message._id!,
+                threadId: message._id!,
+                subject: message.subject,
+                preview: message.body,
+                sender: { name: senderName, role: "provider" },
+                timestamp: message.createdAt || new Date().toISOString(),
+                priority: message.priority,
+                isRead: message.isRead || false,
+                hasReplies: false,
+                replyCount: 0,
+              }}
+              onPress={() => onOpenThread(message._id!)}
+            />
+          );
+        })}
       </View>
-    </View>
-  )
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingHorizontal: 16 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { fontSize: 16, marginTop: 12, color: "#64748b" },
   emptyContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 },
@@ -158,4 +173,4 @@ const styles = StyleSheet.create({
   },
   quickComposeText: { fontSize: 16, fontWeight: "600", color: "#ffffff" },
   messagesList: { gap: 12 },
-})
+});
