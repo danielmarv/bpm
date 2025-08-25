@@ -1,6 +1,6 @@
-import express from "express"
-import { body, param } from "express-validator"
-import { authenticate } from "../middleware/auth.js"
+import express from "express";
+import { body, param, query, validationResult } from "express-validator";
+import { authenticate } from "../middleware/auth.js";
 import {
   sendMessage,
   getMessages,
@@ -8,9 +8,18 @@ import {
   markAsRead,
   deleteMessage,
   getConversations,
-} from "../controllers/messageController.js"
+} from "../controllers/messageController.js";
 
-const router = express.Router()
+const router = express.Router();
+
+// Middleware to handle validation results
+const handleValidation = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, message: "Validation errors", errors: errors.array() });
+  }
+  next();
+};
 
 // Validation rules
 const messageValidation = [
@@ -27,7 +36,7 @@ const messageValidation = [
     .optional()
     .isIn(["low", "normal", "high", "urgent"])
     .withMessage("Invalid priority level"),
-]
+];
 
 /**
  * @swagger
@@ -66,7 +75,7 @@ const messageValidation = [
  *       400:
  *         description: Validation error
  */
-router.post("/", authenticate, messageValidation, sendMessage)
+router.post("/", authenticate, messageValidation, handleValidation, sendMessage);
 
 /**
  * @swagger
@@ -104,7 +113,18 @@ router.post("/", authenticate, messageValidation, sendMessage)
  *       200:
  *         description: Messages retrieved successfully
  */
-router.get("/", authenticate, getMessages)
+router.get(
+  "/",
+  authenticate,
+  [
+    query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
+    query("limit").optional().isInt({ min: 1 }).withMessage("Limit must be a positive integer"),
+    query("unread").optional().isBoolean().withMessage("Unread must be a boolean"),
+    query("type").optional().isIn(["inbox", "sent"]).withMessage("Type must be inbox or sent"),
+  ],
+  handleValidation,
+  getMessages
+);
 
 /**
  * @swagger
@@ -118,7 +138,7 @@ router.get("/", authenticate, getMessages)
  *       200:
  *         description: Conversations retrieved successfully
  */
-router.get("/conversations", authenticate, getConversations)
+router.get("/conversations", authenticate, getConversations);
 
 /**
  * @swagger
@@ -141,7 +161,7 @@ router.get("/conversations", authenticate, getConversations)
  *       404:
  *         description: Message not found
  */
-router.get("/:id", authenticate, param("id").isMongoId(), getMessage)
+router.get("/:id", authenticate, param("id").isMongoId().withMessage("Invalid message ID"), handleValidation, getMessage);
 
 /**
  * @swagger
@@ -164,7 +184,7 @@ router.get("/:id", authenticate, param("id").isMongoId(), getMessage)
  *       404:
  *         description: Message not found
  */
-router.put("/:id/read", authenticate, param("id").isMongoId(), markAsRead)
+router.put("/:id/read", authenticate, param("id").isMongoId().withMessage("Invalid message ID"), handleValidation, markAsRead);
 
 /**
  * @swagger
@@ -187,6 +207,6 @@ router.put("/:id/read", authenticate, param("id").isMongoId(), markAsRead)
  *       404:
  *         description: Message not found
  */
-router.delete("/:id", authenticate, param("id").isMongoId(), deleteMessage)
+router.delete("/:id", authenticate, param("id").isMongoId().withMessage("Invalid message ID"), handleValidation, deleteMessage);
 
-export default router
+export default router;
