@@ -1,139 +1,126 @@
-"use client"
-
 import { useState } from "react"
-import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native"
-import { PrimaryButton, SecondaryButton } from "../ui/Button"
-import { LoadingSpinner } from "../ui/LoadingSpinner"
-// import { PrioritySelector } from "./PrioritySelector"
-// import { ProviderSelector } from "./ProviderSelector"
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert } from "react-native"
+import { TouchableOpacity } from "react-native-gesture-handler"
+import { Picker } from "@react-native-picker/picker" // ✅ Added Picker
+import { messagesApi } from "../../services/messagesApi"
+import { ProviderSelector } from "../ProviderSelector"
 
-interface ComposeMessageProps {
-  onMessageSent: () => void
-  onCancel: () => void
-}
-
-export function ComposeMessage({ onMessageSent, onCancel }: ComposeMessageProps) {
+export function ComposeMessage({ navigation }: any) {
   const [formData, setFormData] = useState({
     providerId: "",
     subject: "",
-    message: "",
-    priority: "normal" as "urgent" | "high" | "normal" | "low",
+    body: "",
+    priority: "normal", // ✅ keep in state, default normal
   })
-  const [loading, setLoading] = useState(false)
 
-  const handleSend = async () => {
-    if (!formData.providerId || !formData.subject || !formData.message) {
-      Alert.alert("Error", "Please fill in all required fields")
-      return
-    }
-
-    try {
-      setLoading(true)
-      // Mock API call - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      Alert.alert("Success", "Message sent successfully", [
-        {
-          text: "OK",
-          onPress: onMessageSent,
-        },
-      ])
-    } catch (error) {
-      Alert.alert("Error", "Failed to send message. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [sending, setSending] = useState(false)
 
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleSend = async () => {
+    if (!formData.providerId || !formData.subject || !formData.body) {
+      Alert.alert("Error", "Please fill in all fields")
+      return
+    }
+
+    try {
+      setSending(true)
+      await messagesApi.sendMessage({
+        receiverId: formData.providerId,
+        subject: formData.subject,
+        body: formData.body,
+        priority: formData.priority, // ✅ now from picker
+      })
+      Alert.alert("Success", "Message sent successfully")
+      navigation.goBack()
+    } catch (error) {
+      console.error("Error sending message:", error)
+      Alert.alert("Error", "Failed to send message")
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.form}>
-        <Text style={styles.title}>New Message</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Compose Message</Text>
 
-        {/* <View style={styles.inputContainer}>
-          <Text style={styles.label}>To *</Text>
-          <ProviderSelector
-            selectedProviderId={formData.providerId}
-            onProviderChange={(providerId) => updateFormData("providerId", providerId)}
-          />
-        </View> */}
+      {/* Provider Selection */}
+      <View style={styles.inputContainer}>
+        <ProviderSelector
+          selectedProviderId={formData.providerId}
+          onProviderChange={(providerId) => updateFormData("providerId", providerId)}
+        />
+      </View>
 
-        {/* <View style={styles.inputContainer}>
-          <Text style={styles.label}>Priority</Text>
-          <PrioritySelector
-            selectedPriority={formData.priority}
-            onPriorityChange={(priority) => updateFormData("priority", priority)}
-          />
-        </View> */}
+      {/* Subject */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Subject *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.subject}
+          onChangeText={(text) => updateFormData("subject", text)}
+          placeholder="Enter subject"
+        />
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Subject *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.subject}
-            onChangeText={(value) => updateFormData("subject", value)}
-            placeholder="Enter message subject"
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
+      {/* Message Body */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Message *</Text>
+        <TextInput
+          style={[styles.input, styles.textarea]}
+          value={formData.body}
+          onChangeText={(text) => updateFormData("body", text)}
+          placeholder="Enter your message"
+          multiline
+          numberOfLines={6}
+        />
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Message *</Text>
-          <TextInput
-            style={[styles.input, styles.messageInput]}
-            value={formData.message}
-            onChangeText={(value) => updateFormData("message", value)}
-            placeholder="Type your message here..."
-            placeholderTextColor="#94a3b8"
-            multiline
-            numberOfLines={8}
-            textAlignVertical="top"
-          />
-        </View>
-
-        <View style={styles.buttonContainer}>
-          {loading ? (
-            <LoadingSpinner size="large" color="#2563eb" />
-          ) : (
-            <>
-              <PrimaryButton title="Send Message" onPress={handleSend} style={styles.sendButton} />
-              <SecondaryButton title="Cancel" onPress={onCancel} style={styles.cancelButton} />
-            </>
-          )}
+      {/* Priority Selector */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Priority *</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.priority}
+            onValueChange={(value) => updateFormData("priority", value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Low" value="low" />
+            <Picker.Item label="Normal" value="normal" />
+            <Picker.Item label="High" value="high" />
+            <Picker.Item label="Urgent" value="urgent" />
+          </Picker>
         </View>
       </View>
+
+      {/* Send Button */}
+      <TouchableOpacity
+        style={[styles.sendButton, sending && { opacity: 0.7 }]}
+        onPress={handleSend}
+        disabled={sending}
+      >
+        <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send Message"}</Text>
+      </TouchableOpacity>
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: "#fff",
   },
-  form: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 20,
+  header: {
+    fontSize: 22,
     fontFamily: "Montserrat-Bold",
     color: "#1e293b",
     marginBottom: 24,
-    textAlign: "center",
   },
-  inputContainer: {
-    marginBottom: 24,
-  },
+  inputContainer: { marginBottom: 20 },
   label: {
     fontSize: 16,
     fontFamily: "Montserrat-SemiBold",
@@ -141,28 +128,37 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
     borderWidth: 1,
     borderColor: "#e2e8f0",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#f8fafc",
+    fontFamily: "Montserrat-Regular",
   },
-  messageInput: {
-    height: 120,
-    paddingTop: 14,
+  textarea: {
+    minHeight: 120,
+    textAlignVertical: "top",
   },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 8,
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    backgroundColor: "#f8fafc",
+  },
+  picker: {
+    height: 50,
+    width: "100%",
   },
   sendButton: {
     backgroundColor: "#2563eb",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
   },
-  cancelButton: {
-    borderColor: "#2563eb",
+  sendButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Montserrat-Bold",
   },
 })
