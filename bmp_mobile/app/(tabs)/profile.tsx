@@ -4,7 +4,7 @@ import { useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "../../contexts/AuthContext"
-import { LifestyleOverview } from "../../components/lifestyle/LifestyleOverview"
+// import { LifestyleOverview } from "../../components/lifestyle/LifestyleOverview"
 import { ExerciseTracker } from "../../components/lifestyle/ExerciseTracker"
 // import { DietTracker } from "../../components/lifestyle/DietTracker"
 // import { WeightTracker } from "../../components/lifestyle/WeightTracker"
@@ -29,12 +29,7 @@ export default function ProfileScreen() {
       //   return <ProfileSettings onBack={() => setViewMode("overview")} />
       default:
         return (
-          <LifestyleOverview
-            onExercisePress={() => setViewMode("exercise")}
-            onDietPress={() => setViewMode("diet")}
-            onWeightPress={() => setViewMode("weight")}
-            onSettingsPress={() => setViewMode("settings")}
-          />
+          <ExerciseTracker onBack={() => setViewMode("overview")} />
         )
     }
   }

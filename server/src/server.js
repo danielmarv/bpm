@@ -29,12 +29,7 @@ const PORT = process.env.PORT || 5000
 
 // Security middleware
 app.use(helmet())
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:8081"], // ✅ multiple allowed origins
-    credentials: true,
-  })
-)
+app.use(cors("*"))
 
 
 // Rate limiting
