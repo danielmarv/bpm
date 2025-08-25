@@ -30,13 +30,10 @@ interface RegisterData {
   email: string
   password: string
   role: "patient" | "provider"
-  profile: {
-    firstName: string
-    lastName: string
-    dateOfBirth?: string
-    gender?: string
-    phone?: string
-  }
+  firstName: string
+  lastName: string
+  phone?: string
+
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)

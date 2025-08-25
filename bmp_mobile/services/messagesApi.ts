@@ -76,9 +76,6 @@ class MessagesApi {
       const headers = await this.getAuthHeaders()
 
       const queryParams = new URLSearchParams()
-      if (filters?.type) queryParams.append("type", filters.type)
-      if (filters?.unread !== undefined)
-        queryParams.append("unread", filters.unread.toString())
 
       const queryString = queryParams.toString()
       const url = `${API_URL}/messages${queryString ? `?${queryString}` : ""}`
@@ -95,8 +92,8 @@ class MessagesApi {
         )
       }
 
-      const responseData: ApiResponse<Message[]> = await response.json()
-      return responseData.data
+      const responseData: any = await response.json()
+      return responseData.data.messages
     } catch (error) {
       console.error("Error fetching messages:", error)
       throw error

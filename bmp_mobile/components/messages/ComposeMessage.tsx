@@ -1,19 +1,49 @@
-import { useState } from "react"
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert } from "react-native"
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from "react-native"
 import { TouchableOpacity } from "react-native-gesture-handler"
-import { Picker } from "@react-native-picker/picker" // ✅ Added Picker
 import { messagesApi } from "../../services/messagesApi"
+import { usersApi, User } from "../../services/usersApi"
 import { ProviderSelector } from "../ProviderSelector"
+import { PrioritySelector } from "../PrioritySelector"
 
 export function ComposeMessage({ navigation }: any) {
   const [formData, setFormData] = useState({
     providerId: "",
     subject: "",
     body: "",
-    priority: "normal", // ✅ keep in state, default normal
+    priority: "normal" as "normal" | "high" | "low",
   })
 
   const [sending, setSending] = useState(false)
+  const [providers, setProviders] = useState<User[]>([])
+  const [loadingProviders, setLoadingProviders] = useState(true)
+
+  // Load providers
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        setLoadingProviders(true)
+        const allProviders = await usersApi.getAllUsers({ role: "provider" })
+        setProviders(allProviders)
+      } catch (err) {
+        console.error("Failed to load providers:", err)
+        Alert.alert("Error", "Failed to load providers")
+      } finally {
+        setLoadingProviders(false)
+      }
+    }
+    fetchProviders()
+  }, [])
 
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -31,7 +61,7 @@ export function ComposeMessage({ navigation }: any) {
         receiverId: formData.providerId,
         subject: formData.subject,
         body: formData.body,
-        priority: formData.priority, // ✅ now from picker
+        priority: formData.priority,
       })
       Alert.alert("Success", "Message sent successfully")
       navigation.goBack()
@@ -47,11 +77,25 @@ export function ComposeMessage({ navigation }: any) {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Compose Message</Text>
 
-      {/* Provider Selection */}
+      {/* Provider Selector */}
       <View style={styles.inputContainer}>
-        <ProviderSelector
-          selectedProviderId={formData.providerId}
-          onProviderChange={(providerId) => updateFormData("providerId", providerId)}
+        {loadingProviders ? (
+          <ActivityIndicator size="small" color="#2563eb" />
+        ) : (
+          <ProviderSelector
+            providers={providers}
+            selectedProviderId={formData.providerId}
+            onProviderChange={(id) => updateFormData("providerId", id)}
+          />
+        )}
+      </View>
+
+      {/* Priority Selector */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Priority</Text>
+        <PrioritySelector
+          selectedPriority={formData.priority}
+          onPriorityChange={(priority) => updateFormData("priority", priority)}
         />
       </View>
 
@@ -79,30 +123,15 @@ export function ComposeMessage({ navigation }: any) {
         />
       </View>
 
-      {/* Priority Selector */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Priority *</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={formData.priority}
-            onValueChange={(value) => updateFormData("priority", value)}
-            style={styles.picker}
-          >
-            <Picker.Item label="Low" value="low" />
-            <Picker.Item label="Normal" value="normal" />
-            <Picker.Item label="High" value="high" />
-            <Picker.Item label="Urgent" value="urgent" />
-          </Picker>
-        </View>
-      </View>
-
       {/* Send Button */}
       <TouchableOpacity
         style={[styles.sendButton, sending && { opacity: 0.7 }]}
         onPress={handleSend}
         disabled={sending}
       >
-        <Text style={styles.sendButtonText}>{sending ? "Sending..." : "Send Message"}</Text>
+        <Text style={styles.sendButtonText}>
+          {sending ? "Sending..." : "Send Message"}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   )
@@ -139,16 +168,6 @@ const styles = StyleSheet.create({
   textarea: {
     minHeight: 120,
     textAlignVertical: "top",
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 12,
-    backgroundColor: "#f8fafc",
-  },
-  picker: {
-    height: 50,
-    width: "100%",
   },
   sendButton: {
     backgroundColor: "#2563eb",

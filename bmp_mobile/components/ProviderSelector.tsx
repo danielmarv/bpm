@@ -1,90 +1,53 @@
-import { useEffect, useState } from "react"
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native"
-import { usersApi, User } from "../services/usersApi"
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native"
+import { useState } from "react"
+import { User } from "../services/usersApi"
 
 interface ProviderSelectorProps {
+  providers: User[]
   selectedProviderId: string
-  onProviderChange: (providerId: string) => void
+  onProviderChange: (id: string) => void
 }
 
-export function ProviderSelector({ selectedProviderId, onProviderChange }: ProviderSelectorProps) {
-  const [providers, setProviders] = useState<User[]>([])
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState("")
-  const [dropdownVisible, setDropdownVisible] = useState(false)
-
-  useEffect(() => {
-    const fetchProviders = async () => {
-      setLoading(true)
-      try {
-        const data = await usersApi.getAllUsers({
-          role: "provider",
-          search,
-          limit: 20,
-        })
-        setProviders(data)
-      } catch (error) {
-        console.error("Error fetching providers:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchProviders()
-  }, [search])
+export function ProviderSelector({
+  providers,
+  selectedProviderId,
+  onProviderChange,
+}: ProviderSelectorProps) {
+  const [open, setOpen] = useState(false)
 
   const selectedProvider = providers.find((p) => p._id === selectedProviderId)
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Select Provider *</Text>
+      <Text style={styles.label}>To *</Text>
+      <TouchableOpacity
+        style={styles.selectorButton}
+        onPress={() => setOpen((prev) => !prev)}
+      >
+        <Text style={styles.selectorText}>
+          {selectedProvider
+            ? `${selectedProvider.profile?.firstName} ${selectedProvider.profile?.lastName}`
+            : "Select Provider"}
+        </Text>
+      </TouchableOpacity>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Search providers..."
-        placeholderTextColor="#94a3b8"
-        value={selectedProvider ? `${selectedProvider.profile?.firstName} ${selectedProvider.profile?.lastName}` : search}
-        onFocus={() => setDropdownVisible(true)}
-        onChangeText={(value) => {
-          setSearch(value)
-          onProviderChange("") // clear selection when searching
-        }}
-      />
-
-      {dropdownVisible && (
+      {open && (
         <View style={styles.dropdown}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#2563eb" />
-          ) : providers.length === 0 ? (
-            <Text style={styles.noResults}>No providers found</Text>
-          ) : (
-            <FlatList
-              data={providers}
-              keyExtractor={(item) => item._id || Math.random().toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.item}
-                  onPress={() => {
-                    onProviderChange(item._id || "")
-                    setDropdownVisible(false)
-                    setSearch(`${item.profile?.firstName || ""} ${item.profile?.lastName || ""}`)
-                  }}
-                >
-                  <Text style={styles.itemText}>
-                    {item.profile?.firstName} {item.profile?.lastName} ({item.email})
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-          )}
+          <FlatList
+            data={providers}
+            keyExtractor={(item) => item._id!}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() => {
+                  onProviderChange(item._id!)
+                  setOpen(false)
+                }}
+              >
+                <Text>{`${item.profile?.firstName} ${item.profile?.lastName}`}</Text>
+              </TouchableOpacity>
+            )}
+          />
         </View>
       )}
     </View>
@@ -92,46 +55,29 @@ export function ProviderSelector({ selectedProviderId, onProviderChange }: Provi
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 24 },
-  label: {
-    fontSize: 16,
-    fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
-    marginBottom: 8,
-  },
-  input: {
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  container: { marginBottom: 16 },
+  label: { marginBottom: 8, fontWeight: "600", color: "#1e293b" },
+  selectorButton: {
     borderWidth: 1,
     borderColor: "#e2e8f0",
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#f8fafc",
   },
+  selectorText: { color: "#1e293b" },
   dropdown: {
     marginTop: 4,
-    backgroundColor: "#fff",
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e2e8f0",
+    borderRadius: 12,
+    backgroundColor: "#fff",
     maxHeight: 200,
+    zIndex: 999,
+    elevation: 4,
   },
   item: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  itemText: {
-    fontSize: 15,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-  },
-  noResults: {
-    padding: 12,
-    fontSize: 14,
-    color: "#94a3b8",
-    textAlign: "center",
+    borderBottomColor: "#e2e8f0",
   },
 })

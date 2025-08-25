@@ -58,13 +58,10 @@ export default function RegisterScreen() {
         email: formData.email,
         password: formData.password,
         role: formData.role,
-        profile: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone || undefined,
-          dateOfBirth: formData.dateOfBirth || undefined,
-          gender: formData.gender || undefined,
-        },
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone || undefined,
+  
       })
       router.replace("/(tabs)/dashboard")
     } catch (error) {

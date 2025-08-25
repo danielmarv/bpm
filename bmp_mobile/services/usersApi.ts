@@ -142,8 +142,8 @@ class UsersApi {
       const err = await response.json().catch(() => ({}))
       throw new Error(err.message || `HTTP error! status: ${response.status}`)
     }
-    const data: ApiResponse<User[]> = await response.json()
-    return data.data
+    const data: any = await response.json()
+    return data.data.users
   }
 
   async getUserById(id: string): Promise<User> {

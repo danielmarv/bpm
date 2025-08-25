@@ -52,16 +52,9 @@ export const sendMessage = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    const { type = "inbox", unread, limit = 20, page = 1 } = req.query
     const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
 
     const query = {}
-
-    if (type === "inbox") {
-      query.receiverId = req.user._id
-    } else if (type === "sent") {
-      query.senderId = req.user._id
-    }
 
     if (unread === "true") {
       query.isRead = false
