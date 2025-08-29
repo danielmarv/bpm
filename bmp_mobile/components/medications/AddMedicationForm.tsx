@@ -33,7 +33,6 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
     try {
       setLoading(true)
 
-      // Include required fields per Medication type
       const medicationData: Omit<Medication, "_id" | "userId" | "createdAt" | "updatedAt"> = {
         name: formData.name,
         dosage: {
