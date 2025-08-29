@@ -48,7 +48,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
         reminderSchedule: {
           enabled: true,
           times: formData.times,
-          daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], // Default all days
+          daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         },
       }
 
