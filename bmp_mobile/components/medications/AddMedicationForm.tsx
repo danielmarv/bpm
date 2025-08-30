@@ -29,7 +29,6 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
       Alert.alert("Error", "Please fill in medication name and dosage")
       return
     }
-
     try {
       setLoading(true)
 
@@ -118,9 +117,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
             selectedTimes={formData.times}        // <-- matches TimeSelector
             onTimesChange={(times) => updateFormData("times", times)} // <-- matches TimeSelector
           />
-
         </View>
-
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Instructions (Optional)</Text>
           <TextInput
