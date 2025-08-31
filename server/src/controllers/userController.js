@@ -200,3 +200,158 @@ export const getUserById = async (req, res) => {
     })
   }
 }
+
+export const createUser = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      })
+    }
+
+    const { email, password, role, profile } = req.body
+
+    // Check role permissions
+    if (req.user.role === "provider" && role !== "patient") {
+      return res.status(403).json({
+        success: false,
+        message: "Providers can only create patient accounts",
+      })
+    }
+
+    if (req.user.role === "admin" && !["patient", "provider"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role specified",
+      })
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email })
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists",
+      })
+    }
+
+    const user = new User({
+      email,
+      password,
+      role,
+      profile,
+      createdBy: req.user._id,
+    })
+
+    await user.save()
+
+    res.status(201).json({
+      success: true,
+      message: `${role.charAt(0).toUpperCase() + role.slice(1)} created successfully`,
+      data: user,
+    })
+  } catch (error) {
+    console.error("Create user error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const getMyPatients = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search } = req.query
+
+    const query = {
+      role: "patient",
+      isActive: true,
+      createdBy: req.user._id,
+    }
+
+    if (search) {
+      query.$or = [
+        { email: { $regex: search, $options: "i" } },
+        { "profile.firstName": { $regex: search, $options: "i" } },
+        { "profile.lastName": { $regex: search, $options: "i" } },
+      ]
+    }
+
+    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
+
+    const patients = await User.find(query)
+      .select("-password -refreshTokens")
+      .sort({ createdAt: -1 })
+      .limit(Number.parseInt(limit))
+      .skip(skip)
+
+    const total = await User.countDocuments(query)
+
+    res.json({
+      success: true,
+      data: {
+        patients,
+        pagination: {
+          current: Number.parseInt(page),
+          pages: Math.ceil(total / Number.parseInt(limit)),
+          total,
+        },
+      },
+    })
+  } catch (error) {
+    console.error("Get my patients error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const updateUserRole = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      })
+    }
+
+    const { role } = req.body
+    const userId = req.params.id
+
+    if (!["patient", "provider", "admin"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role specified",
+      })
+    }
+
+    const user = await User.findByIdAndUpdate(userId, { role }, { new: true, runValidators: true }).select(
+      "-password -refreshTokens",
+    )
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      })
+    }
+
+    res.json({
+      success: true,
+      message: "User role updated successfully",
+      data: user,
+    })
+  } catch (error) {
+    console.error("Update user role error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}

@@ -9,6 +9,9 @@ import {
   deleteAccount,
   getAllUsers,
   getUserById,
+  createUser,
+  getMyPatients,
+  updateUserRole,
 } from "../controllers/userController.js"
 
 const router = express.Router()
@@ -36,6 +39,22 @@ const changePasswordValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage("Password must contain at least one lowercase, uppercase, and number"),
 ]
+
+const createUserValidation = [
+  body("email").isEmail().normalizeEmail().withMessage("Valid email required"),
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage("Password must contain at least one lowercase, uppercase, and number"),
+  body("role").isIn(["patient", "provider"]).withMessage("Invalid role"),
+  body("profile.firstName").trim().isLength({ min: 1 }).withMessage("First name required"),
+  body("profile.lastName").trim().isLength({ min: 1 }).withMessage("Last name required"),
+  body("profile.phone").optional().isMobilePhone().withMessage("Invalid phone number"),
+  body("profile.dateOfBirth").optional().isISO8601().withMessage("Invalid date format"),
+]
+
+const updateRoleValidation = [body("role").isIn(["patient", "provider", "admin"]).withMessage("Invalid role")]
 
 /**
  * @swagger
@@ -162,6 +181,127 @@ router.put("/change-password", authenticate, changePasswordValidation, changePas
  *         description: Account deactivated successfully
  */
 router.delete("/account", authenticate, deleteAccount)
+
+/**
+ * @swagger
+ * /api/users/create:
+ *   post:
+ *     summary: Create a new user (Admin can create providers/patients, Providers can create patients)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - role
+ *               - profile
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               role:
+ *                 type: string
+ *                 enum: [patient, provider]
+ *               profile:
+ *                 type: object
+ *                 required:
+ *                   - firstName
+ *                   - lastName
+ *                 properties:
+ *                   firstName:
+ *                     type: string
+ *                   lastName:
+ *                     type: string
+ *                   phone:
+ *                     type: string
+ *                   dateOfBirth:
+ *                     type: string
+ *                     format: date
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error or user already exists
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.post("/create", authenticate, authorize("admin", "provider"), createUserValidation, createUser)
+
+/**
+ * @swagger
+ * /api/users/my-patients:
+ *   get:
+ *     summary: Get patients created by the current provider
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *           description: Search by first name, last name, or email
+ *     responses:
+ *       200:
+ *         description: Patients retrieved successfully
+ */
+router.get("/my-patients", authenticate, authorize("provider"), getMyPatients)
+
+/**
+ * @swagger
+ * /api/users/{id}/role:
+ *   put:
+ *     summary: Update user role (Admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [patient, provider, admin]
+ *     responses:
+ *       200:
+ *         description: User role updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: User not found
+ */
+router.put("/:id/role", authenticate, authorize("admin"), param("id").isMongoId(), updateRoleValidation, updateUserRole)
 
 /**
  * @swagger
