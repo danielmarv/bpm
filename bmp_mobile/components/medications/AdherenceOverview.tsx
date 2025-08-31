@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { Eye, EyeOff } from "../ui/Icons"
 import { medicationsApi, Medication, AdherenceRecord } from "../../services/medicationsApi"
-
 interface MedicationWithAdherence extends Medication {
   adherenceRate: number
 }
@@ -20,7 +19,6 @@ export function AdherenceOverview() {
         setLoading(true)
         // 1. Fetch active medications
         const meds = await medicationsApi.getMedications({ active: true })
-
         // 2. Fetch adherence logs for each medication
         const medsWithAdherence: MedicationWithAdherence[] = await Promise.all(
           meds.map(async (med) => {

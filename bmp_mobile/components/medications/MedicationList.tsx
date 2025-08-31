@@ -34,7 +34,6 @@ export function MedicationList({ onAddMedication }: MedicationListProps) {
 
   const handleLogDose = async (medicationId: string, medication: Medication) => {
     try {
-      // 1. Fetch adherence logs
       const logsResponse = await medicationsApi.getAdherenceLogs(medicationId)
       const logs = logsResponse.adherence ?? logsResponse.logs ?? []
 

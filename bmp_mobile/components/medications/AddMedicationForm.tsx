@@ -29,11 +29,9 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
       Alert.alert("Error", "Please fill in medication name and dosage")
       return
     }
-
     try {
       setLoading(true)
 
-      // Include required fields per Medication type
       const medicationData: Omit<Medication, "_id" | "userId" | "createdAt" | "updatedAt"> = {
         name: formData.name,
         dosage: {
@@ -48,7 +46,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
         reminderSchedule: {
           enabled: true,
           times: formData.times,
-          daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], // Default all days
+          daysOfWeek: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         },
       }
 
@@ -119,9 +117,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
             selectedTimes={formData.times}        // <-- matches TimeSelector
             onTimesChange={(times) => updateFormData("times", times)} // <-- matches TimeSelector
           />
-
         </View>
-
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Instructions (Optional)</Text>
           <TextInput
