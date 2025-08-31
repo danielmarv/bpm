@@ -114,7 +114,7 @@ export function AddMedicationForm({ onMedicationAdded }: AddMedicationFormProps)
           <Text style={styles.label}>Reminder Times</Text>
           <TimeSelector
             frequency={formData.frequency}
-            selectedTimes={formData.times}        // <-- matches TimeSelector
+            selectedTimes={formData.times}
             onTimesChange={(times) => updateFormData("times", times)} // <-- matches TimeSelector
           />
         </View>
