@@ -1,5 +1,6 @@
 import Medication from "../models/Medication.js"
 import MedicationLog from "../models/MedicationLog.js"
+import User from "../models/User.js"
 import { validationResult } from "express-validator"
 
 export const createMedication = async (req, res) => {
@@ -34,6 +35,152 @@ export const createMedication = async (req, res) => {
   }
 }
 
+export const prescribeMedication = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      })
+    }
+
+    const { patientId } = req.params
+    const providerId = req.user._id
+
+    // Verify the patient exists and was created by this provider
+    const patient = await User.findOne({
+      _id: patientId,
+      role: "patient",
+      createdBy: providerId,
+      isActive: true,
+    })
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found or not under your care",
+      })
+    }
+
+    const medication = new Medication({
+      ...req.body,
+      userId: patientId,
+      prescribedById: providerId,
+      prescribedBy: {
+        name: `${req.user.profile.firstName} ${req.user.profile.lastName}`,
+        contact: req.user.email,
+      },
+    })
+
+    await medication.save()
+
+    // Populate the medication with patient and provider info
+    await medication.populate([
+      { path: "userId", select: "profile.firstName profile.lastName email" },
+      { path: "prescribedById", select: "profile.firstName profile.lastName email" },
+    ])
+
+    res.status(201).json({
+      success: true,
+      message: "Medication prescribed successfully",
+      data: medication,
+    })
+  } catch (error) {
+    console.error("Prescribe medication error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const getMyPrescriptions = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, patientId, active } = req.query
+    const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
+
+    const query = { prescribedById: req.user._id }
+
+    if (patientId) {
+      query.userId = patientId
+    }
+
+    if (active !== undefined) {
+      query.active = active === "true"
+    }
+
+    const medications = await Medication.find(query)
+      .populate("userId", "profile.firstName profile.lastName email")
+      .sort({ createdAt: -1 })
+      .limit(Number.parseInt(limit))
+      .skip(skip)
+
+    const total = await Medication.countDocuments(query)
+
+    res.json({
+      success: true,
+      data: {
+        medications,
+        pagination: {
+          current: Number.parseInt(page),
+          pages: Math.ceil(total / Number.parseInt(limit)),
+          total,
+        },
+      },
+    })
+  } catch (error) {
+    console.error("Get my prescriptions error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const getPatientMedications = async (req, res) => {
+  try {
+    const { patientId } = req.params
+    const { active } = req.query
+
+    // Verify the patient is under this provider's care
+    const patient = await User.findOne({
+      _id: patientId,
+      role: "patient",
+      createdBy: req.user._id,
+      isActive: true,
+    })
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found or not under your care",
+      })
+    }
+
+    const query = { userId: patientId }
+    if (active !== undefined) {
+      query.active = active === "true"
+    }
+
+    const medications = await Medication.find(query)
+      .populate("prescribedById", "profile.firstName profile.lastName email")
+      .sort({ createdAt: -1 })
+
+    res.json({
+      success: true,
+      data: medications,
+    })
+  } catch (error) {
+    console.error("Get patient medications error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
 export const getMedications = async (req, res) => {
   try {
     const { active } = req.query
@@ -43,7 +190,9 @@ export const getMedications = async (req, res) => {
       query.active = active === "true"
     }
 
-    const medications = await Medication.find(query).sort({ createdAt: -1 })
+    const medications = await Medication.find(query)
+      .populate("prescribedById", "profile.firstName profile.lastName email")
+      .sort({ createdAt: -1 })
 
     res.json({
       success: true,
