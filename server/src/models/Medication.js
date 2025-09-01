@@ -32,6 +32,13 @@ const medicationSchema = new mongoose.Schema(
       required: true,
     },
     endDate: Date,
+    prescribedById: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: function () {
+        return this.prescribedBy && this.prescribedBy.name
+      },
+    },
     prescribedBy: {
       name: String,
       contact: String,
@@ -67,5 +74,6 @@ const medicationSchema = new mongoose.Schema(
 // Index for efficient querying
 medicationSchema.index({ userId: 1, active: 1 })
 medicationSchema.index({ userId: 1, "refillInfo.refillDate": 1 })
+medicationSchema.index({ prescribedById: 1, active: 1 })
 
 export default mongoose.model("Medication", medicationSchema)

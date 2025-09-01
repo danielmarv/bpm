@@ -1,6 +1,6 @@
 import express from "express"
-import { body, param, query } from "express-validator"
-import { authenticate } from "../middleware/auth.js"
+import { body, param } from "express-validator"
+import { authenticate, authorize } from "../middleware/auth.js"
 import {
   createMedication,
   getMedications,
@@ -10,6 +10,9 @@ import {
   logMedicationTaken,
   getMedicationLogs,
   getUpcomingRefills,
+  prescribeMedication,
+  getMyPrescriptions,
+  getPatientMedications,
 } from "../controllers/medicationController.js"
 
 const router = express.Router()
@@ -68,6 +71,143 @@ const medicationValidation = [
  *         description: Validation error
  */
 router.post("/", authenticate, medicationValidation, createMedication)
+
+/**
+ * @swagger
+ * /api/medications/prescribe/{patientId}:
+ *   post:
+ *     summary: Prescribe medication to a patient (Provider only)
+ *     tags: [Medications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: patientId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Patient ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - dosage
+ *               - frequency
+ *               - startDate
+ *             properties:
+ *               name:
+ *                 type: string
+ *               dosage:
+ *                 type: object
+ *                 properties:
+ *                   amount:
+ *                     type: number
+ *                   unit:
+ *                     type: string
+ *               frequency:
+ *                 type: string
+ *                 enum: [once_daily, twice_daily, three_times_daily, four_times_daily, as_needed, custom]
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *               instructions:
+ *                 type: string
+ *               sideEffects:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Medication prescribed successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Patient not found or not under your care
+ */
+router.post(
+  "/prescribe/:patientId",
+  authenticate,
+  authorize("provider"),
+  param("patientId").isMongoId(),
+  medicationValidation,
+  prescribeMedication,
+)
+
+/**
+ * @swagger
+ * /api/medications/my-prescriptions:
+ *   get:
+ *     summary: Get medications prescribed by the current provider
+ *     tags: [Medications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: patientId
+ *         schema:
+ *           type: string
+ *         description: Filter by specific patient
+ *       - in: query
+ *         name: active
+ *         schema:
+ *           type: boolean
+ *         description: Filter by active status
+ *     responses:
+ *       200:
+ *         description: Prescriptions retrieved successfully
+ */
+router.get("/my-prescriptions", authenticate, authorize("provider"), getMyPrescriptions)
+
+/**
+ * @swagger
+ * /api/medications/patient/{patientId}:
+ *   get:
+ *     summary: Get medications for a specific patient (Provider only)
+ *     tags: [Medications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: patientId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Patient ID
+ *       - in: query
+ *         name: active
+ *         schema:
+ *           type: boolean
+ *         description: Filter by active status
+ *     responses:
+ *       200:
+ *         description: Patient medications retrieved successfully
+ *       404:
+ *         description: Patient not found or not under your care
+ */
+router.get(
+  "/patient/:patientId",
+  authenticate,
+  authorize("provider"),
+  param("patientId").isMongoId(),
+  getPatientMedications,
+)
 
 /**
  * @swagger
