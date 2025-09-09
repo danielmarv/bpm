@@ -1,25 +1,17 @@
 "use client"
 
 import { Tabs } from "expo-router"
-import { Platform, Dimensions, ViewStyle } from "react-native"
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming 
-} from "react-native-reanimated"
-import { 
-  Heart, 
-  Activity, 
-  Pill, 
-  MessageSquare, 
-  User,
-  BookOpen // <-- Add icon for Education
-} from "../../components/ui/Icons"
+import { Platform, Dimensions } from "react-native"
+import { useAuth } from "../../contexts/AuthContext"
+import { Heart, Activity, Pill, MessageSquare, User, Shield, BookOpen } from "../../components/ui/Icons"
+import AnimatedTabIcon from "../../components/AnimatedTabIcon"  // Declare the variable before using it
 
 const { height: screenHeight } = Dimensions.get("window")
 const TAB_HEIGHT = Platform.OS === "ios" ? 90 : 80
 
 export default function TabLayout() {
+  const { isAdmin } = useAuth()
+
   return (
     <Tabs
       screenOptions={{
@@ -68,16 +60,6 @@ export default function TabLayout() {
           tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Pill} />,
         }}
       />
-
-      {/* New Education Tab */}
-      <Tabs.Screen
-        name="education"
-        options={{
-          title: "Education",
-          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={BookOpen} />,
-        }}
-      />
-
       <Tabs.Screen
         name="messages"
         options={{
@@ -86,6 +68,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="education"
+        options={{
+          title: "Education",
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={BookOpen} />,
+        }}
+      />
+      {isAdmin() && (
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: "Admin",
+            tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Shield} />,
+            tabBarActiveTintColor: "#dc2626",
+          }}
+        />
+      )}
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
@@ -93,37 +92,5 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-  )
-}
-
-// Animated Icon Component
-type TabIconProps = {
-  focused: boolean
-  color: string
-  size: number
-  Icon: (props: { color: string; size: number }) => JSX.Element
-}
-
-function AnimatedTabIcon({ focused, color, size, Icon }: TabIconProps) {
-  const scale = useSharedValue(focused ? 1.3 : 1)
-  const rotateX = useSharedValue(focused ? "15deg" : "0deg")
-
-  // Animate values
-  scale.value = withTiming(focused ? 1.3 : 1)
-  rotateX.value = withTiming(focused ? "15deg" : "0deg")
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value, rotateX: rotateX.value }],
-      shadowOpacity: withTiming(focused ? 0.25 : 0),
-      shadowRadius: withTiming(focused ? 6 : 0),
-      elevation: withTiming(focused ? 8 : 0),
-    } as ViewStyle
-  })
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <Icon color={color} size={size + 2} />
-    </Animated.View>
   )
 }
