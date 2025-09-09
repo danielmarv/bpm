@@ -560,3 +560,156 @@ export function X({ size = 24, color = "#000000" }: IconProps) {
     </Svg>
   )
 }
+export function BookOpen({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M2 4.5C2 3.12 3.12 2 4.5 2H9c1.38 0 2.5 1.12 2.5 2.5V20c0-1.38-1.12-2.5-2.5-2.5H4.5C3.12 17.5 2 18.62 2 20V4.5zM22 4.5C22 3.12 20.88 2 19.5 2H15c-1.38 0-2.5 1.12-2.5 2.5V20c0-1.38 1.12-2.5 2.5-2.5h4.5c1.38 0 2.5 1.12 2.5 2.5V4.5z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function Video({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M15 10.5V7.5C15 6.67 14.33 6 13.5 6H4.5C3.67 6 3 6.67 3 7.5V16.5C3 17.33 3.67 18 4.5 18H13.5C14.33 18 15 17.33 15 16.5V13.5L19.5 17V7L15 10.5Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function FileText({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M14 2H6C5.17 2 4.5 2.67 4.5 3.5V20.5C4.5 21.33 5.17 22 6 22H18C18.83 22 19.5 21.33 19.5 20.5V8L14 2Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M14 2V8H19.5"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M9 13H15"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M9 17H13"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+export function AlertTriangle({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M10.29 3.86L1.82 18a1.5 1.5 0 0 0 1.29 2.25h17.78a1.5 1.5 0 0 0 1.29-2.25L13.71 3.86a1.5 1.5 0 0 0-2.42 0z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 9v4"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M12 17h.01"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+export function Search({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M21 21l-4.35-4.35"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <Circle
+        cx={10.5}
+        cy={10.5}
+        r={7.5}
+        stroke={color}
+        strokeWidth={2}
+      />
+    </Svg>
+  );
+}
+export function TrendingDown({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M18 13l-5 5-4-4-6 6"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M18 18V13H13"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+export function Save({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M17 21l-5-5-5 5"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+export function MoreVertical({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={5} r={1.5} fill={color} />
+      <Circle cx={12} cy={12} r={1.5} fill={color} />
+      <Circle cx={12} cy={19} r={1.5} fill={color} />
+    </Svg>
+  );
+}

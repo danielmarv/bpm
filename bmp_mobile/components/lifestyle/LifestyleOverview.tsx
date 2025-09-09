@@ -1,330 +1,344 @@
 "use client"
 
-import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from "react-native"
-import { PrimaryButton, SecondaryButton } from "../ui/Button"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native"
+import { activitiesApi, type Activity } from "../../services/activitiesApi"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
-import { ArrowLeft, Clock, Zap } from "../ui/Icons"
-import { activitiesApi, Activity } from "../../services/activitiesApi"
+import { Activity as ActivityIcon, Apple, Scale, Clock, Zap } from "../ui/Icons"
 
-interface ExerciseTrackerProps {
-  onBack: () => void
+interface LifestyleOverviewProps {
+  onNavigate: (section: "exercise" | "diet" | "weight") => void
 }
 
-export function ExerciseTracker({ onBack }: ExerciseTrackerProps) {
-  const [formData, setFormData] = useState({
-    activity: "",
-    duration: "",
-    intensity: "moderate" as "low" | "moderate" | "high",
-    calories: "",
-    notes: "",
+interface ActivityStats {
+  totalActivities: number
+  totalDuration: number
+  totalCalories: number
+  weeklyGoal: number
+  weeklyProgress: number
+}
+
+export function LifestyleOverview({ onNavigate }: LifestyleOverviewProps) {
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<ActivityStats>({
+    totalActivities: 0,
+    totalDuration: 0,
+    totalCalories: 0,
+    weeklyGoal: 150, // 150 minutes per week recommended
+    weeklyProgress: 0,
   })
-  const [loading, setLoading] = useState(false)
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([])
 
-  const activities = [
-    "Walking",
-    "Running",
-    "Cycling",
-    "Swimming",
-    "Yoga",
-    "Weight Training",
-    "Dancing",
-    "Tennis",
-    "Basketball",
-    "Other",
-  ]
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  const handleSubmit = async () => {
-    if (!formData.activity || !formData.duration) {
-      Alert.alert("Error", "Please fill in activity and duration")
-      return
-    }
-
+  const loadData = async () => {
     try {
       setLoading(true)
 
-      // Prepare activity data for API
-      const activityPayload: Omit<Activity, "id" | "userId" | "createdAt" | "updatedAt"> = {
-        type: formData.activity.toLowerCase().replace(/\s+/g, "_") as Activity["type"],
-        date: new Date().toISOString(),
-        data: {
-          duration: Number.parseInt(formData.duration),
-          intensity: formData.intensity,
-          ...(formData.calories && { calories: Number.parseInt(formData.calories) }),
-          ...(formData.notes && { notes: formData.notes }),
-        },
-      }
+      // Get activities from the last 7 days
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - 7)
 
-      await activitiesApi.logActivity(activityPayload)
+      const activities = await activitiesApi.getActivities({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      })
 
-      Alert.alert("Success", "Exercise logged successfully", [
-        {
-          text: "OK",
-          onPress: () => {
-            setFormData({
-              activity: "",
-              duration: "",
-              intensity: "moderate",
-              calories: "",
-              notes: "",
-            })
-            onBack()
-          },
-        },
-      ])
+      // Calculate stats
+      const exerciseActivities = activities.filter((a) => a.type === "exercise")
+      const totalDuration = exerciseActivities.reduce((sum, activity) => {
+        return sum + (activity.data?.duration || 0)
+      }, 0)
+
+      const totalCalories = exerciseActivities.reduce((sum, activity) => {
+        return sum + (activity.data?.calories || 0)
+      }, 0)
+
+      setStats((prev) => ({
+        ...prev,
+        totalActivities: exerciseActivities.length,
+        totalDuration,
+        totalCalories,
+        weeklyProgress: Math.min((totalDuration / prev.weeklyGoal) * 100, 100),
+      }))
+
+      // Get recent activities (last 5)
+      setRecentActivities(activities.slice(0, 5))
     } catch (error) {
-      console.error("Failed to log exercise:", error)
-      Alert.alert("Error", "Failed to log exercise. Please try again.")
+      console.error("Failed to load lifestyle data:", error)
     } finally {
       setLoading(false)
     }
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "exercise":
+        return <ActivityIcon size={16} color="#059669" />
+      case "diet":
+        return <Apple size={16} color="#f59e0b" />
+      case "weight":
+        return <Scale size={16} color="#8b5cf6" />
+      default:
+        return <ActivityIcon size={16} color="#64748b" />
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LoadingSpinner size="large" color="#059669" />
+        <Text style={styles.loadingText}>Loading your lifestyle data...</Text>
+      </View>
+    )
+  }
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <ArrowLeft size={24} color="#1e293b" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Log Exercise</Text>
-        <View style={styles.placeholder} />
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Weekly Progress */}
+      <View style={styles.progressCard}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressTitle}>Weekly Exercise Goal</Text>
+          <Text style={styles.progressSubtitle}>
+            {stats.totalDuration} / {stats.weeklyGoal} minutes
+          </Text>
+        </View>
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBarBackground}>
+            <View style={[styles.progressBarFill, { width: `${stats.weeklyProgress}%` }]} />
+          </View>
+          <Text style={styles.progressPercentage}>{Math.round(stats.weeklyProgress)}%</Text>
+        </View>
       </View>
 
-      {/* Form */}
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Activity *</Text>
-          <View style={styles.activitiesGrid}>
-            {activities.map((activity) => (
-              <TouchableOpacity
-                key={activity}
-                style={[styles.activityChip, formData.activity === activity && styles.selectedChip]}
-                onPress={() => setFormData((prev) => ({ ...prev, activity }))}
-              >
-                <Text style={[styles.chipText, formData.activity === activity && styles.selectedChipText]}>
-                  {activity}
-                </Text>
-              </TouchableOpacity>
-            ))}
+      {/* Stats Cards */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statCard}>
+          <View style={styles.statIcon}>
+            <ActivityIcon size={24} color="#059669" />
           </View>
+          <Text style={styles.statValue}>{stats.totalActivities}</Text>
+          <Text style={styles.statLabel}>Activities</Text>
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Duration (minutes) *</Text>
-          <View style={styles.inputWrapper}>
-            <Clock size={20} color="#64748b" />
-            <TextInput
-              style={styles.input}
-              value={formData.duration}
-              onChangeText={(value) => setFormData((prev) => ({ ...prev, duration: value }))}
-              placeholder="30"
-              keyboardType="numeric"
-              placeholderTextColor="#94a3b8"
-            />
+        <View style={styles.statCard}>
+          <View style={styles.statIcon}>
+            <Clock size={24} color="#3b82f6" />
           </View>
+          <Text style={styles.statValue}>{stats.totalDuration}</Text>
+          <Text style={styles.statLabel}>Minutes</Text>
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Intensity</Text>
-          <View style={styles.intensityContainer}>
-            {(["low", "moderate", "high"] as const).map((intensity) => (
-              <TouchableOpacity
-                key={intensity}
-                style={[styles.intensityButton, formData.intensity === intensity && styles.selectedIntensity]}
-                onPress={() => setFormData((prev) => ({ ...prev, intensity }))}
-              >
-                <Zap
-                  size={16}
-                  color={formData.intensity === intensity ? "#ffffff" : "#64748b"}
-                  fill={formData.intensity === intensity ? "#ffffff" : "none"}
-                />
-                <Text style={[styles.intensityText, formData.intensity === intensity && styles.selectedIntensityText]}>
-                  {intensity.charAt(0).toUpperCase() + intensity.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        <View style={styles.statCard}>
+          <View style={styles.statIcon}>
+            <Zap size={24} color="#f59e0b" />
           </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Calories Burned (optional)</Text>
-          <TextInput
-            style={styles.textInput}
-            value={formData.calories}
-            onChangeText={(value) => setFormData((prev) => ({ ...prev, calories: value }))}
-            placeholder="300"
-            keyboardType="numeric"
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Notes (optional)</Text>
-          <TextInput
-            style={[styles.textInput, styles.textArea]}
-            value={formData.notes}
-            onChangeText={(value) => setFormData((prev) => ({ ...prev, notes: value }))}
-            placeholder="How did you feel during the workout?"
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
-
-        <View style={styles.buttonContainer}>
-          {loading ? (
-            <LoadingSpinner size="large" color="#2563eb" />
-          ) : (
-            <>
-              <PrimaryButton title="Log Exercise" onPress={handleSubmit} style={styles.submitButton} />
-              <SecondaryButton title="Cancel" onPress={onBack} />
-            </>
-          )}
+          <Text style={styles.statValue}>{stats.totalCalories}</Text>
+          <Text style={styles.statLabel}>Calories</Text>
         </View>
       </View>
-    </View>
+
+      {/* Quick Actions */}
+      <View style={styles.actionsContainer}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate("exercise")}>
+            <View style={[styles.actionIcon, { backgroundColor: "#ecfdf5" }]}>
+              <ActivityIcon size={24} color="#059669" />
+            </View>
+            <Text style={styles.actionTitle}>Log Exercise</Text>
+            <Text style={styles.actionSubtitle}>Track your workout</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate("diet")}>
+            <View style={[styles.actionIcon, { backgroundColor: "#fef3c7" }]}>
+              <Apple size={24} color="#f59e0b" />
+            </View>
+            <Text style={styles.actionTitle}>Log Diet</Text>
+            <Text style={styles.actionSubtitle}>Record your meals</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => onNavigate("weight")}>
+            <View style={[styles.actionIcon, { backgroundColor: "#f3e8ff" }]}>
+              <Scale size={24} color="#8b5cf6" />
+            </View>
+            <Text style={styles.actionTitle}>Log Weight</Text>
+            <Text style={styles.actionSubtitle}>Track your weight</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Recent Activities */}
+      <View style={styles.recentContainer}>
+        <Text style={styles.sectionTitle}>Recent Activities</Text>
+        {recentActivities.length > 0 ? (
+          <View style={styles.activitiesList}>
+            {recentActivities.map((activity, index) => (
+              <View key={activity._id || index} style={styles.activityItem}>
+                <View style={styles.activityLeft}>
+                  {getActivityIcon(activity.type)}
+                  <View style={styles.activityDetails}>
+                    <Text style={styles.activityName}>{activity.data?.type || activity.type}</Text>
+                    <Text style={styles.activityDate}>{formatDate(activity.date)}</Text>
+                  </View>
+                </View>
+                <View style={styles.activityRight}>
+                  {activity.data?.duration && <Text style={styles.activityDuration}>{activity.data.duration} min</Text>}
+                  {activity.data?.calories && <Text style={styles.activityCalories}>{activity.data.calories} cal</Text>}
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No recent activities</Text>
+            <Text style={styles.emptySubtext}>Start logging your activities to see them here</Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#f1f5f9",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 20,
-    fontFamily: "Montserrat-Bold",
-    color: "#1e293b",
-  },
-  placeholder: {
-    width: 40,
-  },
-  form: {
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 60 },
+  loadingText: { fontSize: 16, fontFamily: "OpenSans-Regular", color: "#64748b", marginTop: 16 },
+  progressCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 24,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
   },
-  inputContainer: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
+  progressHeader: { marginBottom: 16 },
+  progressTitle: { fontSize: 18, fontFamily: "Montserrat-Bold", color: "#1e293b", marginBottom: 4 },
+  progressSubtitle: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#64748b" },
+  progressBarContainer: { flexDirection: "row", alignItems: "center", gap: 12 },
+  progressBarBackground: { flex: 1, height: 8, backgroundColor: "#f1f5f9", borderRadius: 4, overflow: "hidden" },
+  progressBarFill: { height: "100%", backgroundColor: "#059669", borderRadius: 4 },
+  progressPercentage: {
+    fontSize: 14,
     fontFamily: "Montserrat-SemiBold",
-    color: "#1e293b",
+    color: "#059669",
+    minWidth: 40,
+    textAlign: "right",
+  },
+  statsGrid: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#ecfdf5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  statValue: { fontSize: 20, fontFamily: "Montserrat-Bold", color: "#1e293b", marginBottom: 4 },
+  statLabel: { fontSize: 12, fontFamily: "OpenSans-Regular", color: "#64748b" },
+  actionsContainer: { marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontFamily: "Montserrat-Bold", color: "#1e293b", marginBottom: 16 },
+  actionsGrid: { flexDirection: "row", gap: 12 },
+  actionCard: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
   },
-  activitiesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  activityChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  selectedChip: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
-  },
-  chipText: {
+  actionTitle: {
     fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
-  },
-  selectedChipText: {
-    color: "#ffffff",
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
+    fontFamily: "Montserrat-SemiBold",
     color: "#1e293b",
-    paddingVertical: 12,
-    paddingLeft: 12,
+    marginBottom: 4,
+    textAlign: "center",
   },
-  textInput: {
-    fontSize: 16,
-    fontFamily: "OpenSans-Regular",
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
+  actionSubtitle: { fontSize: 12, fontFamily: "OpenSans-Regular", color: "#64748b", textAlign: "center" },
+  recentContainer: { marginBottom: 24 },
+  activitiesList: {
+    backgroundColor: "#ffffff",
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  textArea: {
-    height: 80,
-    paddingTop: 14,
-  },
-  intensityContainer: {
+  activityItem: {
     flexDirection: "row",
-    gap: 12,
-  },
-  intensityButton: {
-    flex: 1,
-    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    gap: 8,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
   },
-  selectedIntensity: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
-  },
-  intensityText: {
+  activityLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
+  activityDetails: { marginLeft: 12, flex: 1 },
+  activityName: {
     fontSize: 14,
-    fontFamily: "OpenSans-SemiBold",
-    color: "#64748b",
+    fontFamily: "Montserrat-SemiBold",
+    color: "#1e293b",
+    marginBottom: 2,
+    textTransform: "capitalize",
   },
-  selectedIntensityText: {
-    color: "#ffffff",
+  activityDate: { fontSize: 12, fontFamily: "OpenSans-Regular", color: "#64748b" },
+  activityRight: { alignItems: "flex-end" },
+  activityDuration: { fontSize: 12, fontFamily: "OpenSans-SemiBold", color: "#059669", marginBottom: 2 },
+  activityCalories: { fontSize: 12, fontFamily: "OpenSans-Regular", color: "#64748b" },
+  emptyState: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 32,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  buttonContainer: {
-    gap: 12,
-    marginTop: 8,
-  },
-  submitButton: {
-    backgroundColor: "#2563eb",
-  },
+  emptyText: { fontSize: 16, fontFamily: "Montserrat-SemiBold", color: "#64748b", marginBottom: 8 },
+  emptySubtext: { fontSize: 14, fontFamily: "OpenSans-Regular", color: "#94a3b8", textAlign: "center" },
 })

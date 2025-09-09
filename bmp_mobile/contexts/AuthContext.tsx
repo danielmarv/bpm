@@ -3,13 +3,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { Platform } from "react-native"
 import * as SecureStore from "expo-secure-store"
-import Constants from "expo-constants"
 
 interface User {
   _id: string
   id: string
   email: string
-  role: "patient" | "provider"
+  role: "patient" | "provider" | "admin"
   profile: {
     firstName: string
     lastName: string
@@ -25,16 +24,20 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   register: (userData: RegisterData) => Promise<void>
   logout: () => Promise<void>
+  hasRole: (role: User["role"]) => boolean
+  isAdmin: () => boolean
+  isProvider: () => boolean
+  isPatient: () => boolean
+  canAccessAdminFeatures: () => boolean
 }
 
 interface RegisterData {
   email: string
   password: string
-  role: "patient" | "provider"
+  role: "patient" | "provider" | "admin"
   firstName: string
   lastName: string
   phone?: string
-
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -162,7 +165,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>
+  const hasRole = (role: User["role"]): boolean => {
+    return user?.role === role
+  }
+
+  const isAdmin = (): boolean => {
+    return user?.role === "admin"
+  }
+
+  const isProvider = (): boolean => {
+    return user?.role === "provider"
+  }
+
+  const isPatient = (): boolean => {
+    return user?.role === "patient"
+  }
+
+  const canAccessAdminFeatures = (): boolean => {
+    return user?.role === "admin"
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        hasRole,
+        isAdmin,
+        isProvider,
+        isPatient,
+        canAccessAdminFeatures,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
