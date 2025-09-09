@@ -16,19 +16,12 @@ interface User {
     gender?: string
     phone?: string
   }
-}
-
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (userData: RegisterData) => Promise<void>
-  logout: () => Promise<void>
-  hasRole: (role: User["role"]) => boolean
-  isAdmin: () => boolean
-  isProvider: () => boolean
-  isPatient: () => boolean
-  canAccessAdminFeatures: () => boolean
+  bpThresholds?: {
+    systolicHigh: number
+    systolicLow: number
+    diastolicHigh: number
+    diastolicLow: number
+  }
 }
 
 interface RegisterData {
@@ -38,6 +31,20 @@ interface RegisterData {
   firstName: string
   lastName: string
   phone?: string
+}
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (userData: RegisterData) => Promise<void>
+  logout: () => Promise<void>
+  updateUser: (userData: Partial<User>) => Promise<void>
+  hasRole: (role: User["role"]) => boolean
+  isAdmin: () => boolean
+  isProvider: () => boolean
+  isPatient: () => boolean
+  canAccessAdminFeatures: () => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -165,6 +172,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const updateUser = async (userData: Partial<User>) => {
+    try {
+      setLoading(true)
+
+      const token = await storage.getItem("accessToken")
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userData),
+      })
+
+      if (!response.ok) {
+        throw new Error("Profile update failed")
+      }
+
+      const responseData = await response.json()
+      const updatedUser = { ...user, ...responseData.data }
+
+      await storage.setItem("userData", JSON.stringify(updatedUser))
+      setUser(updatedUser)
+    } catch (error) {
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const hasRole = (role: User["role"]): boolean => {
     return user?.role === role
   }
@@ -193,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        updateUser,
         hasRole,
         isAdmin,
         isProvider,
