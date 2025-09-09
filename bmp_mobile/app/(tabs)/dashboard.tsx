@@ -1,15 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions } from "react-native"
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions, ActivityIndicator } from "react-native"
 import { LinearGradient } from "expo-linear-gradient"
 import { useAuth } from "../../contexts/AuthContext"
 import { BPQuickEntry } from "../../components/bp/BPQuickEntry"
 import { BPStatsCard } from "../../components/bp/BPStatsCard"
-// import { RecentReadings } from "../../components/bp/RecentReadings"
 import { HealthOverview } from "../../components/dashboard/HealthOverview"
-// import { QuickActions } from "../../components/dashboard/QuickActions"
-import { Heart } from "../../components/ui/Icons"
+import { Heart, FileText } from "../../components/ui/Icons"
 
 const { width } = Dimensions.get("window")
 
@@ -31,13 +29,15 @@ export default function DashboardScreen() {
   }
 
   useEffect(() => {
-    // Mock data - replace with actual API call
+    // Replace this with actual API call
     setBpStats({
       latest: { systolic: 125, diastolic: 82, pulse: 74, timestamp: new Date().toISOString() },
       average: { systolic: 123, diastolic: 80 },
       trend: "stable",
     })
   }, [])
+
+  const hasBpData = bpStats.latest.systolic > 0
 
   return (
     <View style={styles.container}>
@@ -58,32 +58,31 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#059669" />}
       >
-        {/* Health Overview */}
-        <HealthOverview stats={bpStats} />
+        {!hasBpData ? (
+          <View style={styles.emptyState}>
+            <FileText size={48} color="#94a3b8" />
+            <Text style={styles.emptyStateText}>No blood pressure data yet.</Text>
+            <Text style={styles.emptyStateSubText}>Quickly add a reading using the Quick Entry section below.</Text>
+            {refreshing && <ActivityIndicator size="small" color="#059669" style={{ marginTop: 8 }} />}
+          </View>
+        ) : (
+          <>
+            {/* Health Overview */}
+            <HealthOverview stats={bpStats} />
 
-        {/* Quick BP Entry */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Entry</Text>
-          <BPQuickEntry onEntryComplete={onRefresh} />
-        </View>
+            {/* Quick BP Entry */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Quick Entry</Text>
+              <BPQuickEntry onEntryComplete={onRefresh} />
+            </View>
 
-        {/* BP Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Blood Pressure Overview</Text>
-          <BPStatsCard stats={bpStats} />
-        </View>
-
-        {/* Recent Readings */}
-        {/* <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Readings</Text>
-          <RecentReadings />
-        </View> */}
-
-        {/* Quick Actions */}
-        {/* <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <QuickActions />
-        </View> */}
+            {/* BP Stats */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Blood Pressure Overview</Text>
+              <BPStatsCard stats={bpStats} />
+            </View>
+          </>
+        )}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -92,7 +91,6 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
@@ -145,5 +143,26 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 32,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 60,
+    paddingHorizontal: 24,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontFamily: "Montserrat-SemiBold",
+    color: "#1e293b",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    fontFamily: "OpenSans-Regular",
+    color: "#64748b",
+    marginTop: 4,
+    textAlign: "center",
   },
 })
