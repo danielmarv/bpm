@@ -573,3 +573,51 @@ export function BookOpen({ size = 24, color = "#000000" }: IconProps) {
     </Svg>
   );
 }
+
+export function Video({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M15 10.5V7.5C15 6.67 14.33 6 13.5 6H4.5C3.67 6 3 6.67 3 7.5V16.5C3 17.33 3.67 18 4.5 18H13.5C14.33 18 15 17.33 15 16.5V13.5L19.5 17V7L15 10.5Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function FileText({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M14 2H6C5.17 2 4.5 2.67 4.5 3.5V20.5C4.5 21.33 5.17 22 6 22H18C18.83 22 19.5 21.33 19.5 20.5V8L14 2Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M14 2V8H19.5"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M9 13H15"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M9 17H13"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
