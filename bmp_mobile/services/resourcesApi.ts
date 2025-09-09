@@ -11,7 +11,6 @@ const storage = {
     return await SecureStore.getItemAsync(key);
   },
 };
-
 /**
  * Types
  */
