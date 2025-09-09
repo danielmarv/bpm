@@ -4,7 +4,7 @@ import { Tabs } from "expo-router"
 import { Platform, Dimensions } from "react-native"
 import { useAuth } from "../../contexts/AuthContext"
 import { Heart, Activity, Pill, MessageSquare, User, Shield, BookOpen } from "../../components/ui/Icons"
-import AnimatedTabIcon from "../../components/AnimatedTabIcon"  // Declare the variable before using it
+import AnimatedTabIcon from "../../components/AnimatedTabIcon"
 
 const { height: screenHeight } = Dimensions.get("window")
 const TAB_HEIGHT = Platform.OS === "ios" ? 90 : 80
