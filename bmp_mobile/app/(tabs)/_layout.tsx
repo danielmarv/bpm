@@ -7,7 +7,14 @@ import Animated, {
   useAnimatedStyle, 
   withTiming 
 } from "react-native-reanimated"
-import { Heart, Activity, Pill, MessageSquare, User } from "../../components/ui/Icons"
+import { 
+  Heart, 
+  Activity, 
+  Pill, 
+  MessageSquare, 
+  User,
+  BookOpen // <-- Add icon for Education
+} from "../../components/ui/Icons"
 
 const { height: screenHeight } = Dimensions.get("window")
 const TAB_HEIGHT = Platform.OS === "ios" ? 90 : 80
@@ -61,6 +68,16 @@ export default function TabLayout() {
           tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Pill} />,
         }}
       />
+
+      {/* New Education Tab */}
+      <Tabs.Screen
+        name="education"
+        options={{
+          title: "Education",
+          tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={BookOpen} />,
+        }}
+      />
+
       <Tabs.Screen
         name="messages"
         options={{

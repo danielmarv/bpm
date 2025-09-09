@@ -560,3 +560,16 @@ export function X({ size = 24, color = "#000000" }: IconProps) {
     </Svg>
   )
 }
+export function BookOpen({ size = 24, color = "#000000" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M2 4.5C2 3.12 3.12 2 4.5 2H9c1.38 0 2.5 1.12 2.5 2.5V20c0-1.38-1.12-2.5-2.5-2.5H4.5C3.12 17.5 2 18.62 2 20V4.5zM22 4.5C22 3.12 20.88 2 19.5 2H15c-1.38 0-2.5 1.12-2.5 2.5V20c0-1.38 1.12-2.5 2.5-2.5h4.5c1.38 0 2.5 1.12 2.5 2.5V4.5z"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
