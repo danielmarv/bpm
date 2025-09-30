@@ -118,7 +118,6 @@ export function ProfileSettings({ onBack }: ProfileSettingsProps) {
       { text: "Logout", style: "destructive", onPress: async () => {
           try {
             setLoading(true)
-            await usersApi.deleteAccount()
             logout()
           } catch (error) {
             Alert.alert("Error", error instanceof Error ? error.message : "Failed to delete account")

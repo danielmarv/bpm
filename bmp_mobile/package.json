@@ -9,9 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@react-native-picker/picker": "^2.11.1",
-    "@react-three/drei": "^9.105.4",
-    "@react-three/fiber": "^8.16.1",
+    "@react-native-picker/picker": "2.7.5",
     "expo": "~51.0.28",
     "expo-constants": "~16.0.2",
     "expo-font": "~12.0.9",
@@ -24,7 +22,6 @@
     "expo-secure-store": "~13.0.2",
     "expo-splash-screen": "~0.27.5",
     "expo-status-bar": "~1.12.1",
-    "expo-three": "~7.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.5",
@@ -36,7 +33,7 @@
     "react-native-svg": "15.2.0",
     "react-native-vector-icons": "^10.0.3",
     "react-native-web": "~0.19.10",
-    "three": "^0.164.1"
+    "three": "^0.145.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
