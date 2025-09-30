@@ -32,10 +32,7 @@ export default function HomePage() {
 
   return (
     <LinearGradient colors={["#f8fafc", "#e2e8f0"]} style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={true}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={true}>
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.logoContainer}>

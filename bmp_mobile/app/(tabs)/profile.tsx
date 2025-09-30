@@ -71,14 +71,14 @@ export default function ProfileScreen() {
             <Text style={styles.tabText}>Exercise</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tab} onPress={() => setViewMode("diet")}>
-            <Apple size={20} color="#64748b" />
-            <Text style={styles.tabText}>Diet</Text>
+          <TouchableOpacity style={[styles.tab, styles.disabledTab]} disabled>
+            <Apple size={20} color="#cbd5e1" />
+            <Text style={[styles.tabText, styles.disabledTabText]}>Diet</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tab} onPress={() => setViewMode("weight")}>
-            <Scale size={20} color="#64748b" />
-            <Text style={styles.tabText}>Weight</Text>
+          <TouchableOpacity style={[styles.tab, styles.disabledTab]} disabled>
+            <Scale size={20} color="#cbd5e1" />
+            <Text style={[styles.tabText, styles.disabledTabText]}>Weight</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -175,6 +175,9 @@ const styles = StyleSheet.create({
   activeTab: {
     backgroundColor: "#ecfdf5",
   },
+  disabledTab: {
+    opacity: 0.5,
+  },
   tabText: {
     fontSize: 12,
     fontFamily: "OpenSans-SemiBold",
@@ -182,6 +185,9 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: "#059669",
+  },
+  disabledTabText: {
+    color: "#cbd5e1",
   },
   content: {
     flex: 1,

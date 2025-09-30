@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { Platform } from "react-native"
 import * as SecureStore from "expo-secure-store"
+import { useRouter } from "expo-router"
 
 interface User {
   _id: string
@@ -79,6 +80,7 @@ const storage = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     checkAuthState()
@@ -163,12 +165,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      setUser(null)
+
       await storage.removeItem("accessToken")
       await storage.removeItem("refreshToken")
       await storage.removeItem("userData")
-      setUser(null)
+
+      router.replace("/")
     } catch (error) {
       console.error("Error logging out:", error)
+      setUser(null)
+      router.replace("/")
     }
   }
 

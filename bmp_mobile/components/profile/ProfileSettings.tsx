@@ -115,7 +115,18 @@ export function ProfileSettings({ onBack }: ProfileSettingsProps) {
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: logout },
+      { text: "Logout", style: "destructive", onPress: async () => {
+          try {
+            setLoading(true)
+            await usersApi.deleteAccount()
+            logout()
+          } catch (error) {
+            Alert.alert("Error", error instanceof Error ? error.message : "Failed to delete account")
+          } finally {
+            setLoading(false)
+          }
+        },
+       },
     ])
   }
 
