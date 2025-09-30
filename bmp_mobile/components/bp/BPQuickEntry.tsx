@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, TextInput, StyleSheet, Alert } from "react-native"
+import { View, Text, TextInput, StyleSheet, Alert, Dimensions } from "react-native"
 import { PrimaryButton } from "../ui/Button"
 import { LoadingSpinner } from "../ui/LoadingSpinner"
 import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
+
+const { width: screenWidth } = Dimensions.get("window")
+const isSmallScreen = screenWidth < 375
 
 interface BPQuickEntryProps {
   onEntryComplete: () => void
@@ -22,9 +25,9 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
       return
     }
 
-    const systolicNum = parseInt(systolic, 10)
-    const diastolicNum = parseInt(diastolic, 10)
-    const pulseNum = pulse ? parseInt(pulse, 10) : undefined
+    const systolicNum = Number.parseInt(systolic, 10)
+    const diastolicNum = Number.parseInt(diastolic, 10)
+    const pulseNum = pulse ? Number.parseInt(pulse, 10) : undefined
 
     if (systolicNum < 70 || systolicNum > 250 || diastolicNum < 40 || diastolicNum > 150) {
       Alert.alert("Error", "Please enter valid blood pressure values")
@@ -101,7 +104,11 @@ export function BPQuickEntry({ onEntryComplete }: BPQuickEntryProps) {
       </View>
 
       <View style={styles.buttonContainer}>
-        {loading ? <LoadingSpinner size="large" color="#059669" /> : <PrimaryButton title="Save Reading" onPress={handleSubmit} />}
+        {loading ? (
+          <LoadingSpinner size="large" color="#059669" />
+        ) : (
+          <PrimaryButton title="Save Reading" onPress={handleSubmit} />
+        )}
       </View>
     </View>
   )
@@ -111,7 +118,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 20,
+    padding: isSmallScreen ? 16 : 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -122,28 +129,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: isSmallScreen ? 20 : 24,
   },
   inputContainer: {
     flex: 1,
     alignItems: "center",
   },
   inputLabel: {
-    fontSize: 12,
+    fontSize: isSmallScreen ? 11 : 12,
     fontFamily: "OpenSans-SemiBold",
     color: "#64748b",
     marginBottom: 8,
   },
   input: {
-    fontSize: 24,
+    fontSize: isSmallScreen ? 20 : 24,
     fontFamily: "Montserrat-Bold",
     color: "#1e293b",
     textAlign: "center",
     borderBottomWidth: 2,
     borderBottomColor: "#e2e8f0",
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    minWidth: 60,
+    paddingHorizontal: isSmallScreen ? 8 : 12,
+    minWidth: isSmallScreen ? 50 : 60,
   },
   inputUnit: {
     fontSize: 10,
@@ -152,10 +159,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   separator: {
-    fontSize: 32,
+    fontSize: isSmallScreen ? 28 : 32,
     fontFamily: "Montserrat-Bold",
     color: "#e2e8f0",
-    marginHorizontal: 8,
+    marginHorizontal: isSmallScreen ? 4 : 8,
     marginBottom: 16,
   },
   buttonContainer: {

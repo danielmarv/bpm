@@ -3,11 +3,22 @@
 import { Tabs } from "expo-router"
 import { Platform, Dimensions } from "react-native"
 import { useAuth } from "../../contexts/AuthContext"
-import { Heart, Activity, Pill, MessageSquare, User, Shield, BookOpen } from "../../components/ui/Icons"
+import {
+  Heart,
+  Activity,
+  Pill,
+  MessageSquare,
+  User,
+  Shield,
+  BookOpen,
+} from "../../components/ui/Icons"
 import AnimatedTabIcon from "../../components/AnimatedTabIcon"
 
-const { height: screenHeight } = Dimensions.get("window")
-const TAB_HEIGHT = Platform.OS === "ios" ? 90 : 80
+const { width: screenWidth } = Dimensions.get("window")
+const TAB_HEIGHT = Platform.OS === "ios" ? 70 : 60
+
+// responsive font size
+const fontSize = screenWidth < 360 ? 10 : 12
 
 export default function TabLayout() {
   const { isAdmin } = useAuth()
@@ -20,23 +31,24 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#64748b",
         tabBarStyle: {
           backgroundColor: "#ffffff",
-          borderTopWidth: 1,
+          borderTopWidth: Platform.OS === "ios" ? 0.5 : 1,
           borderTopColor: "#e2e8f0",
           height: TAB_HEIGHT,
-          paddingBottom: Platform.OS === "ios" ? 20 : 8,
-          paddingTop: 8,
+          paddingBottom: Platform.OS === "ios" ? 8 : 4,
+          paddingTop: 4,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -3 },
+          shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.05,
-          shadowRadius: 4,
-          elevation: 8,
+          shadowRadius: 3,
+          elevation: 4,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize,
           fontFamily: "OpenSans-SemiBold",
-          marginTop: 4,
         },
-        tabBarItemStyle: { paddingVertical: 4 },
+        tabBarIconStyle: {
+          marginBottom: -2, // keeps icons closer to labels
+        },
       }}
     >
       <Tabs.Screen
@@ -81,6 +93,11 @@ export default function TabLayout() {
             title: "Admin",
             tabBarIcon: (props) => <AnimatedTabIcon {...props} Icon={Shield} />,
             tabBarActiveTintColor: "#dc2626",
+            tabBarLabelStyle: {
+              fontSize,
+              fontFamily: "OpenSans-SemiBold",
+              color: "#dc2626",
+            },
           }}
         />
       )}

@@ -1,9 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { View, Text, StyleSheet } from "react-native"
+import { View, Text, StyleSheet, Dimensions } from "react-native"
 import { TrendUp, TrendDown, Minus } from "../ui/Icons"
 import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
+
+const { width: screenWidth } = Dimensions.get("window")
+const isSmallScreen = screenWidth < 375
 
 interface BPStats {
   latest: BloodPressureReading
@@ -12,7 +15,7 @@ interface BPStats {
 }
 
 interface BPStatsCardProps {
-  userId?: string // optional if you want to fetch stats for a specific user
+  userId?: string
 }
 
 export function BPStatsCard({ userId }: BPStatsCardProps) {
@@ -27,17 +30,14 @@ export function BPStatsCard({ userId }: BPStatsCardProps) {
     try {
       setLoading(true)
 
-      // Fetch the last 10 readings
       const readingsResponse = await bloodPressureApi.getReadings({ limit: 10, page: 1 })
       const readings = readingsResponse.readings
 
-      // Fetch stats (average, etc.) for the last 30 days
       const statsData = await bloodPressureApi.getReadingStats(
         new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         new Date().toISOString(),
       )
 
-      // Determine trend based on last 2 readings
       let trend: "improving" | "stable" | "concerning" = "stable"
       if (readings.length >= 2) {
         const last = readings[readings.length - 1]
@@ -99,12 +99,7 @@ export function BPStatsCard({ userId }: BPStatsCardProps) {
             style={[
               styles.trendText,
               {
-                color:
-                  stats.trend === "improving"
-                    ? "#059669"
-                    : stats.trend === "concerning"
-                    ? "#dc2626"
-                    : "#64748b",
+                color: stats.trend === "improving" ? "#059669" : stats.trend === "concerning" ? "#dc2626" : "#64748b",
               },
             ]}
           >
@@ -145,7 +140,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 20,
+    padding: isSmallScreen ? 16 : 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -160,7 +155,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 15 : 16,
     fontFamily: "Montserrat-SemiBold",
     color: "#1e293b",
   },
@@ -170,7 +165,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   trendText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 13 : 14,
     fontFamily: "OpenSans-SemiBold",
     textTransform: "capitalize",
   },
@@ -184,12 +179,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   readingValue: {
-    fontSize: 36,
+    fontSize: isSmallScreen ? 32 : 36,
     fontFamily: "Montserrat-Bold",
     color: "#1e293b",
   },
   readingUnit: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : 16,
     fontFamily: "OpenSans-Regular",
     color: "#64748b",
     marginLeft: 8,
@@ -218,7 +213,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 15 : 16,
     fontFamily: "Montserrat-SemiBold",
     color: "#1e293b",
   },
