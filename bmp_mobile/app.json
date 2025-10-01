@@ -5,18 +5,19 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bpmanager.mobile"
     },
     "android": {
+      "package": "com.bpmanager.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#059669"
       },
-      "package": "com.bpmanager.mobile"
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "minSdkVersion": 21
     },
     "plugins": [
       "expo-router",
