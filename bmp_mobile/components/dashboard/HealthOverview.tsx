@@ -1,9 +1,12 @@
 "use client"
 
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native"
 import { Eye, EyeOff, TrendUp, TrendDown, Minus } from "../ui/Icons"
 import { useState, useEffect } from "react"
 import { bloodPressureApi, type BloodPressureReading } from "../../services/bloodPressureApi"
+
+const { width: screenWidth } = Dimensions.get("window")
+const isSmallScreen = screenWidth < 375
 
 interface BPStats {
   latest: BloodPressureReading
@@ -11,7 +14,7 @@ interface BPStats {
   trend: "improving" | "stable" | "concerning"
 }
 
-interface HealthOverviewProps {}
+type HealthOverviewProps = {}
 
 export function HealthOverview({}: HealthOverviewProps) {
   const [showDetailed, setShowDetailed] = useState(true)
@@ -25,7 +28,6 @@ export function HealthOverview({}: HealthOverviewProps) {
   const fetchBPStats = async () => {
     try {
       setLoading(true)
-      // Fetch latest BP readings
       const response = await bloodPressureApi.getReadings({ limit: 30, page: 1 })
       const readings = response.readings
 
@@ -35,7 +37,6 @@ export function HealthOverview({}: HealthOverviewProps) {
       const avgSystolic = Math.round(readings.reduce((sum, r) => sum + r.systolic, 0) / readings.length)
       const avgDiastolic = Math.round(readings.reduce((sum, r) => sum + r.diastolic, 0) / readings.length)
 
-      // Determine trend based on last two readings
       let trend: BPStats["trend"] = "stable"
       if (readings.length >= 2) {
         const prevAvg = (readings[1].systolic + readings[1].diastolic) / 2
@@ -108,7 +109,7 @@ export function HealthOverview({}: HealthOverviewProps) {
         >
           <Text
             style={{
-              fontSize: 18,
+              fontSize: isSmallScreen ? 16 : 18,
               fontFamily: "Montserrat-Bold",
               color: "#1e293b",
             }}
@@ -138,7 +139,7 @@ export function HealthOverview({}: HealthOverviewProps) {
   }
 
   const { category, color } = getBPCategory(stats.latest.systolic, stats.latest.diastolic)
-  const overallScore = Math.round((stats.latest.systolic + stats.latest.diastolic) / 2) // Example BP-based score
+  const overallScore = Math.round((stats.latest.systolic + stats.latest.diastolic) / 2)
 
   return (
     <View style={styles.container}>
@@ -153,9 +154,15 @@ export function HealthOverview({}: HealthOverviewProps) {
       {showDetailed ? (
         <View style={styles.detailedView}>
           <View style={styles.scoreContainer}>
-            <CircularProgress value={overallScore} size={100} color="#059669" />
+            <CircularProgress value={overallScore} size={isSmallScreen ? 90 : 100} color="#059669" />
             <View style={styles.trendIndicator}>
-              {stats.trend === "improving" ? <TrendUp size={16} color="#059669" /> : stats.trend === "concerning" ? <TrendDown size={16} color="#dc2626" /> : <Minus size={16} color="#64748b" />}
+              {stats.trend === "improving" ? (
+                <TrendUp size={16} color="#059669" />
+              ) : stats.trend === "concerning" ? (
+                <TrendDown size={16} color="#dc2626" />
+              ) : (
+                <Minus size={16} color="#64748b" />
+              )}
               <Text style={styles.trendText}>{stats.trend.charAt(0).toUpperCase() + stats.trend.slice(1)}</Text>
             </View>
           </View>
@@ -186,7 +193,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 20,
+    padding: isSmallScreen ? 16 : 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -200,7 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : 18,
     fontFamily: "Montserrat-SemiBold",
     color: "#1e293b",
   },
@@ -238,17 +245,17 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: "row",
-    gap: 16,
+    gap: isSmallScreen ? 12 : 16,
   },
   statCard: {
     flex: 1,
     alignItems: "center",
     backgroundColor: "#f8fafc",
     borderRadius: 12,
-    padding: 16,
+    padding: isSmallScreen ? 12 : 16,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 18 : 20,
     fontFamily: "Montserrat-Bold",
     color: "#1e293b",
     marginBottom: 4,

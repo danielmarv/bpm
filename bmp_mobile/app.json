@@ -5,7 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bpmanager.mobile"
@@ -16,10 +18,20 @@
       },
       "package": "com.bpmanager.mobile"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications"
+    ],
     "scheme": "bp-manager",
     "extra": {
-      "apiUrl": "https://bpm-ctw9.onrender.com/api"
+      "apiUrl": "https://bpm-ctw9.onrender.com/api",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "5fff4fd5-485f-4d8c-83ef-9d76bc1974aa"
+      }
     }
   }
 }
