@@ -162,7 +162,7 @@ router.post(
  *       200:
  *         description: Assigned resources retrieved successfully
  */
-router.get("/my-assigned", authenticate, authorize("patient"), getMyAssignedResources)
+router.get("/my-assigned", authenticate, getMyAssignedResources)
 
 /**
  * @swagger
