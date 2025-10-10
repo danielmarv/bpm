@@ -336,7 +336,7 @@ router.put("/:id/role", authenticate, authorize("admin"), param("id").isMongoId(
  *       200:
  *         description: Users retrieved successfully
  */
-router.get("/", authenticate, authorize("admin"), getAllUsers)
+router.get("/", authenticate, getAllUsers)
 
 /**
  * @swagger
