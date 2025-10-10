@@ -220,7 +220,6 @@ export const assignResourceToPatient = async (req, res) => {
     const patient = await User.findOne({
       _id: patientId,
       role: "patient",
-      createdBy: providerId,
       isActive: true,
     })
 
