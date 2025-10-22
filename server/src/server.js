@@ -14,6 +14,7 @@ import authRoutes from "./routes/auth.js"
 import userRoutes from "./routes/users.js"
 import bpRoutes from "./routes/bloodPressure.js"
 import medicationRoutes from "./routes/medications.js"
+import medicationTemplateRoutes from "./routes/medicationTemplates.js"
 import messageRoutes from "./routes/messages.js"
 import activityRoutes from "./routes/activities.js"
 import resourceRoutes from "./routes/resources.js"
@@ -84,6 +85,7 @@ app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
 app.use("/api/blood-pressure", bpRoutes)
 app.use("/api/medications", medicationRoutes)
+app.use("/api/medication-templates", medicationTemplateRoutes)
 app.use("/api/messages", messageRoutes)
 app.use("/api/activities", activityRoutes)
 app.use("/api/resources", resourceRoutes)

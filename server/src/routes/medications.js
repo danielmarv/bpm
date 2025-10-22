@@ -13,6 +13,9 @@ import {
   prescribeMedication,
   getMyPrescriptions,
   getPatientMedications,
+  createMedicationFromTemplate,
+  prescribeMedicationFromTemplate,
+  getAvailableTemplatesForPatient,
 } from "../controllers/medicationController.js"
 
 const router = express.Router()
@@ -27,6 +30,16 @@ const medicationValidation = [
     .withMessage("Invalid frequency"),
   body("startDate").isISO8601().withMessage("Valid start date required"),
   body("endDate").optional().isISO8601().withMessage("Invalid end date"),
+]
+
+// Validation rules for template-based medication creation
+const templateMedicationValidation = [
+  body("startDate").isISO8601().withMessage("Valid start date required"),
+  body("endDate").optional().isISO8601().withMessage("Invalid end date"),
+  body("customizations").optional().isObject().withMessage("Customizations must be an object"),
+  body("customizations.name").optional().trim().isLength({ min: 1 }).withMessage("Custom name required if provided"),
+  body("customizations.dosage.amount").optional().isFloat({ min: 0 }).withMessage("Valid custom dosage amount required"),
+  body("customizations.dosage.unit").optional().trim().isLength({ min: 1 }).withMessage("Custom dosage unit required"),
 ]
 
 /**
@@ -414,5 +427,158 @@ router.post("/:id/log", authenticate, param("id").isMongoId(), logMedicationTake
  *         description: Medication logs retrieved successfully
  */
 router.get("/:id/logs", authenticate, param("id").isMongoId(), getMedicationLogs)
+
+/**
+ * @swagger
+ * /api/medications/templates/available:
+ *   get:
+ *     summary: Get available medication templates for patient
+ *     tags: [Medications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search templates
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Available templates retrieved successfully
+ */
+router.get("/templates/available", authenticate, authorize("patient"), getAvailableTemplatesForPatient)
+
+/**
+ * @swagger
+ * /api/medications/from-template/{templateId}:
+ *   post:
+ *     summary: Create medication from template (Patient)
+ *     tags: [Medications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: templateId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Template ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - startDate
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *               customizations:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   dosage:
+ *                     type: object
+ *                     properties:
+ *                       amount:
+ *                         type: number
+ *                       unit:
+ *                         type: string
+ *                   frequency:
+ *                     type: string
+ *                     enum: [once_daily, twice_daily, three_times_daily, four_times_daily, as_needed, custom]
+ *                   instructions:
+ *                     type: string
+ *                   reminderSchedule:
+ *                     type: object
+ *     responses:
+ *       201:
+ *         description: Medication created from template successfully
+ *       404:
+ *         description: Template not found or not accessible
+ */
+router.post("/from-template/:templateId", authenticate, authorize("patient"), param("templateId").isMongoId(), templateMedicationValidation, createMedicationFromTemplate)
+
+/**
+ * @swagger
+ * /api/medications/prescribe-from-template/{patientId}/{templateId}:
+ *   post:
+ *     summary: Prescribe medication from template (Provider)
+ *     tags: [Medications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: patientId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Patient ID
+ *       - in: path
+ *         name: templateId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Template ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - startDate
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *               customizations:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   dosage:
+ *                     type: object
+ *                     properties:
+ *                       amount:
+ *                         type: number
+ *                       unit:
+ *                         type: string
+ *                   frequency:
+ *                     type: string
+ *                     enum: [once_daily, twice_daily, three_times_daily, four_times_daily, as_needed, custom]
+ *                   instructions:
+ *                     type: string
+ *     responses:
+ *       201:
+ *         description: Medication prescribed from template successfully
+ *       404:
+ *         description: Template not found, not accessible, or patient not under care
+ */
+router.post("/prescribe-from-template/:patientId/:templateId", authenticate, authorize("provider"), param("patientId").isMongoId(), param("templateId").isMongoId(), templateMedicationValidation, prescribeMedicationFromTemplate)
 
 export default router

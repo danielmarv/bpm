@@ -1,4 +1,5 @@
 import Medication from "../models/Medication.js"
+import MedicationTemplate from "../models/MedicationTemplate.js"
 import MedicationLog from "../models/MedicationLog.js"
 import User from "../models/User.js"
 import { validationResult } from "express-validator"
@@ -401,6 +402,275 @@ export const getUpcomingRefills = async (req, res) => {
     })
   } catch (error) {
     console.error("Get upcoming refills error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+// Create medication from template (Patient)
+export const createMedicationFromTemplate = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      })
+    }
+
+    const { templateId } = req.params
+    const { startDate, endDate, customizations } = req.body
+
+    // Find the template
+    const template = await MedicationTemplate.findOne({
+      _id: templateId,
+      $or: [
+        { isPublic: true, approvalStatus: "approved" },
+        { providerId: req.user.createdBy }, // Template from user's provider
+      ],
+      isActive: true,
+    })
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: "Medication template not found or not accessible",
+      })
+    }
+
+    // Calculate end date if not provided and template has default duration
+    let calculatedEndDate = endDate
+    if (!endDate && template.defaultDuration) {
+      const start = new Date(startDate)
+      switch (template.defaultDuration.unit) {
+        case "days":
+          calculatedEndDate = new Date(start.getTime() + template.defaultDuration.amount * 24 * 60 * 60 * 1000)
+          break
+        case "weeks":
+          calculatedEndDate = new Date(start.getTime() + template.defaultDuration.amount * 7 * 24 * 60 * 60 * 1000)
+          break
+        case "months":
+          calculatedEndDate = new Date(start)
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + template.defaultDuration.amount)
+          break
+        case "years":
+          calculatedEndDate = new Date(start)
+          calculatedEndDate.setFullYear(calculatedEndDate.getFullYear() + template.defaultDuration.amount)
+          break
+      }
+    }
+
+    // Create medication from template
+    const medicationData = {
+      userId: req.user._id,
+      name: customizations?.name || template.name,
+      dosage: customizations?.dosage || template.dosage,
+      frequency: customizations?.frequency || template.frequency,
+      customSchedule: customizations?.customSchedule || template.customSchedule,
+      startDate: startDate,
+      endDate: calculatedEndDate,
+      instructions: customizations?.instructions || template.instructions,
+      sideEffects: template.commonSideEffects || [],
+      reminderSchedule: customizations?.reminderSchedule || {
+        enabled: true,
+        times: ["08:00"], // Default reminder time
+        daysOfWeek: [1, 2, 3, 4, 5, 6, 7], // All days
+      },
+      templateId: template._id,
+      prescribedById: template.providerId,
+      prescribedBy: {
+        name: `${template.provider?.profile?.firstName || ''} ${template.provider?.profile?.lastName || ''}`.trim(),
+        contact: template.provider?.email || '',
+      },
+    }
+
+    const medication = new Medication(medicationData)
+    await medication.save()
+
+    // Increment template usage count
+    await template.incrementUsage()
+
+    // Populate the medication
+    await medication.populate([
+      { path: "userId", select: "profile.firstName profile.lastName email" },
+      { path: "prescribedById", select: "profile.firstName profile.lastName email" },
+    ])
+
+    res.status(201).json({
+      success: true,
+      message: "Medication created from template successfully",
+      data: medication,
+    })
+  } catch (error) {
+    console.error("Create medication from template error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+// Prescribe medication from template (Provider)
+export const prescribeMedicationFromTemplate = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      })
+    }
+
+    const { patientId, templateId } = req.params
+    const { startDate, endDate, customizations } = req.body
+    const providerId = req.user._id
+
+    // Verify the patient exists and was created by this provider
+    const patient = await User.findOne({
+      _id: patientId,
+      role: "patient",
+      createdBy: providerId,
+      isActive: true,
+    })
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: "Patient not found or not under your care",
+      })
+    }
+
+    // Find the template (must be accessible to this provider)
+    const template = await MedicationTemplate.findOne({
+      _id: templateId,
+      $or: [
+        { providerId: providerId }, // Own template
+        { isPublic: true, approvalStatus: "approved" }, // Approved public template
+      ],
+      isActive: true,
+    })
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: "Medication template not found or not accessible",
+      })
+    }
+
+    // Calculate end date if not provided and template has default duration
+    let calculatedEndDate = endDate
+    if (!endDate && template.defaultDuration) {
+      const start = new Date(startDate)
+      switch (template.defaultDuration.unit) {
+        case "days":
+          calculatedEndDate = new Date(start.getTime() + template.defaultDuration.amount * 24 * 60 * 60 * 1000)
+          break
+        case "weeks":
+          calculatedEndDate = new Date(start.getTime() + template.defaultDuration.amount * 7 * 24 * 60 * 60 * 1000)
+          break
+        case "months":
+          calculatedEndDate = new Date(start)
+          calculatedEndDate.setMonth(calculatedEndDate.getMonth() + template.defaultDuration.amount)
+          break
+        case "years":
+          calculatedEndDate = new Date(start)
+          calculatedEndDate.setFullYear(calculatedEndDate.getFullYear() + template.defaultDuration.amount)
+          break
+      }
+    }
+
+    // Create medication from template
+    const medicationData = {
+      userId: patientId,
+      name: customizations?.name || template.name,
+      dosage: customizations?.dosage || template.dosage,
+      frequency: customizations?.frequency || template.frequency,
+      customSchedule: customizations?.customSchedule || template.customSchedule,
+      startDate: startDate,
+      endDate: calculatedEndDate,
+      instructions: customizations?.instructions || template.instructions,
+      sideEffects: template.commonSideEffects || [],
+      templateId: template._id,
+      prescribedById: providerId,
+      prescribedBy: {
+        name: `${req.user.profile.firstName} ${req.user.profile.lastName}`,
+        contact: req.user.email,
+      },
+    }
+
+    const medication = new Medication(medicationData)
+    await medication.save()
+
+    // Increment template usage count
+    await template.incrementUsage()
+
+    // Populate the medication
+    await medication.populate([
+      { path: "userId", select: "profile.firstName profile.lastName email" },
+      { path: "prescribedById", select: "profile.firstName profile.lastName email" },
+    ])
+
+    res.status(201).json({
+      success: true,
+      message: "Medication prescribed from template successfully",
+      data: medication,
+    })
+  } catch (error) {
+    console.error("Prescribe medication from template error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+// Get available templates for a patient
+export const getAvailableTemplatesForPatient = async (req, res) => {
+  try {
+    const { category, search, page = 1, limit = 20 } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+
+    const filters = {}
+    if (category) filters.category = category
+    if (search) {
+      filters.$text = { $search: search }
+    }
+
+    // Get templates from patient's provider and public approved templates
+    const query = {
+      $or: [
+        { providerId: req.user.createdBy }, // Templates from patient's provider
+        { isPublic: true, approvalStatus: "approved" }, // Approved public templates
+      ],
+      isActive: true,
+      ...filters,
+    }
+
+    const templates = await MedicationTemplate.find(query)
+      .populate("providerId", "profile.firstName profile.lastName")
+      .sort({ usageCount: -1, createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(skip)
+
+    const total = await MedicationTemplate.countDocuments(query)
+
+    res.json({
+      success: true,
+      data: {
+        templates,
+        pagination: {
+          current: parseInt(page),
+          pages: Math.ceil(total / parseInt(limit)),
+          total,
+        },
+      },
+    })
+  } catch (error) {
+    console.error("Get available templates error:", error)
     res.status(500).json({
       success: false,
       message: "Internal server error",
