@@ -13,6 +13,10 @@ import {
   getMyResourceAssignments,
   updateResourceStatus,
   removeResourceAssignment,
+  createOrUpdateQuiz,
+  getQuiz,
+  submitQuiz,
+  getQuizAttempts,
 } from "../controllers/resourceController.js"
 
 const router = express.Router()
@@ -411,5 +415,128 @@ router.put(
  *         description: Resource not found
  */
 router.delete("/:id", authenticate, authorize("admin", "provider"), param("id").isMongoId(), deleteResource)
+
+/**
+ * @swagger
+ * /api/resources/{id}/quiz:
+ *   get:
+ *     summary: Get quiz for a resource
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     responses:
+ *       200:
+ *         description: Quiz retrieved successfully
+ *       404:
+ *         description: Resource or quiz not found
+ */
+router.get("/:id/quiz", authenticate, param("id").isMongoId(), getQuiz)
+
+/**
+ * @swagger
+ * /api/resources/{id}/quiz:
+ *   put:
+ *     summary: Create or update quiz for a resource (Admin/Provider only)
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               enabled:
+ *                 type: boolean
+ *               passingScore:
+ *                 type: number
+ *               questions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Quiz updated successfully
+ *       404:
+ *         description: Resource not found
+ */
+router.put("/:id/quiz", authenticate, authorize("admin", "provider"), param("id").isMongoId(), createOrUpdateQuiz)
+
+/**
+ * @swagger
+ * /api/resources/{id}/quiz/submit:
+ *   post:
+ *     summary: Submit quiz answers
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - answers
+ *             properties:
+ *               answers:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     questionId:
+ *                       type: string
+ *                     answer:
+ *                       type: string
+ *     responses:
+ *       200:
+ *         description: Quiz submitted and graded
+ *       404:
+ *         description: Resource or quiz not found
+ */
+router.post("/:id/quiz/submit", authenticate, param("id").isMongoId(), submitQuiz)
+
+/**
+ * @swagger
+ * /api/resources/{id}/quiz/attempts:
+ *   get:
+ *     summary: Get user's quiz attempts for a resource
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Resource ID
+ *     responses:
+ *       200:
+ *         description: Attempts retrieved successfully
+ */
+router.get("/:id/quiz/attempts", authenticate, param("id").isMongoId(), getQuizAttempts)
 
 export default router

@@ -53,6 +53,28 @@ const resourceSchema = new mongoose.Schema(
       },
       sources: [String], // external references
     },
+    quiz: {
+      enabled: { type: Boolean, default: false },
+      passingScore: { type: Number, default: 70 }, // percentage
+      questions: [
+        {
+          _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+          type: {
+            type: String,
+            enum: ["multiple_choice", "short_answer"],
+            required: true,
+          },
+          question: { type: String, required: true },
+          points: { type: Number, default: 1 },
+          // For multiple choice
+          options: [String],
+          correctAnswer: String, // index for MC (e.g., "0", "1"), or exact string for short answer
+          // For short answer - allow multiple acceptable answers
+          acceptableAnswers: [String],
+          caseSensitive: { type: Boolean, default: false },
+        },
+      ],
+    },
   },
   {
     timestamps: true,

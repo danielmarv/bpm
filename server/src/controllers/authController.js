@@ -1,6 +1,7 @@
 import User from "../models/User.js"
 import { validationResult } from "express-validator"
 import { generateTokens, verifyRefreshToken } from "../services/tokenService.js"
+import crypto from "crypto"
 
 export const register = async (req, res) => {
   try {
@@ -189,5 +190,80 @@ export const logout = async (req, res) => {
       success: false,
       message: "Internal server error",
     })
+  }
+}
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" })
+    }
+
+    const user = await User.findOne({ email })
+    // Respond generically to avoid user enumeration
+    if (!user) {
+      return res.json({ success: true, message: "If an account exists, a reset link has been sent" })
+    }
+
+    // Generate secure token and expiry (1 hour)
+    const token = crypto.randomBytes(32).toString("hex")
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
+
+    user.passwordReset = { token, expiresAt, used: false }
+    await user.save()
+
+    // TODO: Send email with reset link. For now, return token in non-production for testing only.
+    const isProd = process.env.NODE_ENV === "production"
+    const baseUrl = process.env.APP_BASE_URL || "http://localhost:3000"
+    const resetLink = `${baseUrl}/reset-password?token=${token}`
+
+    if (!isProd) {
+      console.info(`Password reset link for ${email}: ${resetLink}`)
+      return res.json({ success: true, data: { resetLink, token }, message: "Reset link generated" })
+    }
+
+    // In production, integrate a mailer service and do not include the token in the response
+    return res.json({ success: true, message: "If an account exists, a reset link has been sent" })
+  } catch (error) {
+    console.error("Forgot password error:", error)
+    res.status(500).json({ success: false, message: "Internal server error" })
+  }
+}
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: "Token and new password are required" })
+    }
+
+    if (typeof password !== "string" || password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+      return res.status(400).json({ success: false, message: "Password must be at least 8 chars and include lowercase, uppercase and a number" })
+    }
+
+    const user = await User.findOne({ "passwordReset.token": token })
+    if (!user || !user.passwordReset) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" })
+    }
+
+    const { expiresAt, used } = user.passwordReset
+    if (used || !expiresAt || new Date(expiresAt) < new Date()) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" })
+    }
+
+    // Set new password; pre-save hook will hash it
+    user.password = password
+    user.passwordReset.used = true
+    await user.save()
+
+    // Invalidate all refresh tokens (force re-login everywhere)
+    user.refreshTokens = []
+    await user.save()
+
+    return res.json({ success: true, message: "Password has been reset successfully" })
+  } catch (error) {
+    console.error("Reset password error:", error)
+    res.status(500).json({ success: false, message: "Internal server error" })
   }
 }

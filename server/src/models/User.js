@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema(
       timezone: { type: String, default: "UTC" },
     },
     refreshTokens: [String],
+    passwordReset: {
+      token: String,
+      expiresAt: Date,
+      used: { type: Boolean, default: false },
+    },
     isActive: { type: Boolean, default: true },
     lastLogin: Date,
   },

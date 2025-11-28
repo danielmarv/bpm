@@ -11,6 +11,7 @@ import {
   getTemplateCategories,
   approvePublicTemplate,
   getPendingTemplates,
+  updateTemplateStatus,
 } from "../controllers/medicationTemplateController.js"
 
 const router = express.Router()
@@ -38,6 +39,10 @@ const medicationTemplateValidation = [
 
 const approvalValidation = [
   body("action").isIn(["approve", "reject"]).withMessage("Action must be 'approve' or 'reject'"),
+]
+
+const statusValidation = [
+  body("status").isIn(["pending", "approved", "rejected"]).withMessage("Status must be 'pending', 'approved', or 'rejected'"),
 ]
 
 /**
@@ -381,6 +386,45 @@ router.put("/:id", authenticate, authorize("provider"), param("id").isMongoId(),
  *         description: Template not found or insufficient permissions
  */
 router.delete("/:id", authenticate, authorize("provider"), param("id").isMongoId(), deleteMedicationTemplate)
+
+/**
+ * @swagger
+ * /api/medication-templates/{id}/status:
+ *   patch:
+ *     summary: Update template status (Provider for own templates, Admin for public templates)
+ *     tags: [Medication Templates]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Template ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, approved, rejected, draft]
+ *     responses:
+ *       200:
+ *         description: Template status updated successfully
+ *       400:
+ *         description: Invalid status
+ *       404:
+ *         description: Template not found or insufficient permissions
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.patch("/:id/status", authenticate, authorize(["provider", "admin"]), param("id").isMongoId(), statusValidation, updateTemplateStatus)
 
 /**
  * @swagger

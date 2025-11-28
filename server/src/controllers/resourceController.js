@@ -1,5 +1,6 @@
 import Resource from "../models/Resource.js"
 import ResourceAssignment from "../models/ResourceAssignment.js"
+import QuizAttempt from "../models/QuizAttempt.js"
 import User from "../models/User.js"
 import { validationResult } from "express-validator"
 
@@ -449,6 +450,253 @@ export const removeResourceAssignment = async (req, res) => {
     })
   } catch (error) {
     console.error("Remove resource assignment error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+/**
+ * Quiz Management
+ */
+
+export const createOrUpdateQuiz = async (req, res) => {
+  try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation errors",
+        errors: errors.array(),
+      })
+    }
+
+    const { id } = req.params
+    const { enabled, passingScore, questions } = req.body
+
+    const resource = await Resource.findById(id)
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: "Resource not found",
+      })
+    }
+
+    // Validate questions structure
+    if (questions && questions.length > 0) {
+      for (const q of questions) {
+        if (q.type === "multiple_choice" && (!q.options || q.options.length < 2)) {
+          return res.status(400).json({
+            success: false,
+            message: "Multiple choice questions must have at least 2 options",
+          })
+        }
+        if (!q.correctAnswer && (!q.acceptableAnswers || q.acceptableAnswers.length === 0)) {
+          return res.status(400).json({
+            success: false,
+            message: "Each question must have at least one correct answer",
+          })
+        }
+      }
+    }
+
+    resource.quiz = {
+      enabled: enabled !== undefined ? enabled : resource.quiz?.enabled || false,
+      passingScore: passingScore || resource.quiz?.passingScore || 70,
+      questions: questions || resource.quiz?.questions || [],
+    }
+
+    await resource.save()
+
+    res.json({
+      success: true,
+      message: "Quiz updated successfully",
+      data: resource.quiz,
+    })
+  } catch (error) {
+    console.error("Create/update quiz error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const getQuiz = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const resource = await Resource.findById(id).select("title quiz")
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: "Resource not found",
+      })
+    }
+
+    if (!resource.quiz || !resource.quiz.enabled) {
+      return res.status(404).json({
+        success: false,
+        message: "No quiz available for this resource",
+      })
+    }
+
+    // Strip correct answers for client (only show questions and options)
+    const sanitizedQuiz = {
+      enabled: resource.quiz.enabled,
+      passingScore: resource.quiz.passingScore,
+      questions: resource.quiz.questions.map((q) => ({
+        _id: q._id,
+        type: q.type,
+        question: q.question,
+        points: q.points,
+        options: q.options,
+        // Don't send correctAnswer or acceptableAnswers to client
+      })),
+    }
+
+    res.json({
+      success: true,
+      data: {
+        resourceTitle: resource.title,
+        quiz: sanitizedQuiz,
+      },
+    })
+  } catch (error) {
+    console.error("Get quiz error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const submitQuiz = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { answers } = req.body
+    const userId = req.user._id
+
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({
+        success: false,
+        message: "Answers must be an array",
+      })
+    }
+
+    const resource = await Resource.findById(id)
+    if (!resource || !resource.quiz || !resource.quiz.enabled) {
+      return res.status(404).json({
+        success: false,
+        message: "Quiz not found or not enabled",
+      })
+    }
+
+    const quiz = resource.quiz
+    let totalPoints = 0
+    let earnedPoints = 0
+    const gradedAnswers = []
+
+    // Grade each answer
+    for (const question of quiz.questions) {
+      totalPoints += question.points || 1
+
+      const userAnswer = answers.find((a) => a.questionId === question._id.toString())
+      if (!userAnswer) {
+        gradedAnswers.push({
+          questionId: question._id,
+          userAnswer: null,
+          isCorrect: false,
+          pointsEarned: 0,
+        })
+        continue
+      }
+
+      let isCorrect = false
+
+      if (question.type === "multiple_choice") {
+        isCorrect = userAnswer.answer === question.correctAnswer
+      } else if (question.type === "short_answer") {
+        const userAnswerText = (userAnswer.answer || "").trim()
+        const acceptableAnswers = question.acceptableAnswers || [question.correctAnswer]
+
+        if (question.caseSensitive) {
+          isCorrect = acceptableAnswers.some((ans) => ans === userAnswerText)
+        } else {
+          isCorrect = acceptableAnswers.some(
+            (ans) => ans.toLowerCase() === userAnswerText.toLowerCase(),
+          )
+        }
+      }
+
+      const pointsEarned = isCorrect ? question.points || 1 : 0
+      earnedPoints += pointsEarned
+
+      gradedAnswers.push({
+        questionId: question._id,
+        userAnswer: userAnswer.answer,
+        isCorrect,
+        pointsEarned,
+      })
+    }
+
+    const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0
+    const passed = percentage >= quiz.passingScore
+
+    // Save attempt
+    const attempt = new QuizAttempt({
+      resourceId: id,
+      userId,
+      answers: gradedAnswers,
+      score: earnedPoints,
+      totalPoints,
+      percentage,
+      passed,
+    })
+
+    await attempt.save()
+
+    res.json({
+      success: true,
+      message: passed ? "Quiz passed!" : "Quiz completed",
+      data: {
+        attemptId: attempt._id,
+        score: earnedPoints,
+        totalPoints,
+        percentage,
+        passed,
+        passingScore: quiz.passingScore,
+        answers: gradedAnswers,
+      },
+    })
+  } catch (error) {
+    console.error("Submit quiz error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+export const getQuizAttempts = async (req, res) => {
+  try {
+    const { id } = req.params
+    const userId = req.user._id
+
+    const attempts = await QuizAttempt.find({
+      resourceId: id,
+      userId,
+    })
+      .sort({ completedAt: -1 })
+      .limit(10)
+
+    res.json({
+      success: true,
+      data: attempts,
+    })
+  } catch (error) {
+    console.error("Get quiz attempts error:", error)
     res.status(500).json({
       success: false,
       message: "Internal server error",

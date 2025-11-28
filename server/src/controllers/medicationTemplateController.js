@@ -265,7 +265,76 @@ export const getTemplateCategories = async (req, res) => {
   }
 }
 
-// Approve a public template (Admin only)
+// Update template status (Provider for own templates, Admin for any public template)
+export const updateTemplateStatus = async (req, res) => {
+  try {
+    const { status } = req.body // "pending", "approved", "rejected"
+    
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status. Must be 'pending', 'approved', 'rejected'",
+      })
+    }
+
+    // Check if user is admin or provider
+    const isAdmin = req.user.role === "admin"
+    const isProvider = req.user.role === "provider"
+
+    let query = { _id: req.params.id, isActive: true }
+    
+    // If provider, they can only update their own templates
+    if (isProvider && !isAdmin) {
+      query.providerId = req.user._id
+    }
+    
+    // If admin, they can update any public template
+    if (isAdmin && !isProvider) {
+      query.isPublic = true
+    }
+
+    const updateData = {
+      approvalStatus: status,
+    }
+
+    // If admin is approving/rejecting, add approval metadata
+    if (isAdmin && ["approved", "rejected"].includes(status)) {
+      updateData.approvedBy = req.user._id
+      updateData.approvedAt = new Date()
+    }
+
+    const template = await MedicationTemplate.findOneAndUpdate(
+      query,
+      updateData,
+      { new: true }
+    ).populate("providerId", "profile.firstName profile.lastName email")
+
+    if (!template) {
+      return res.status(404).json({
+        success: false,
+        message: "Template not found or you don't have permission to update it",
+      })
+    }
+
+    const actionMessage = isAdmin ? 
+      `Template ${status} by admin` : 
+      `Template status updated to ${status}`
+
+    res.json({
+      success: true,
+      message: actionMessage,
+      data: template,
+    })
+  } catch (error) {
+    console.error("Update template status error:", error)
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    })
+  }
+}
+
+// Approve a public template (Admin only) - Legacy endpoint
 export const approvePublicTemplate = async (req, res) => {
   try {
     const { action } = req.body // "approve" or "reject"
